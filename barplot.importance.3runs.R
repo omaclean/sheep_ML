@@ -1,11 +1,16 @@
 ###############################################
-N_clinical=100
 
+outdir="/home/oscar/scripts/github/sheep_ML/outdir/barplots"
+
+N_clinical=100
 clin=read.csv(paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/clinical_score.data_',
                           N_clinical,'.params.csv',sep=''))
 four=read.csv('~/Pictures/plots/Sheep_megadata/15.5.22/final_four.data.17params.csv')
 six=read.csv('~/Pictures/plots/Sheep_megadata/15.5.22/final_six_states.data50params.csv')
 
+
+#################code
+outdir=gsub("/$","",outdir)
 shared_params=intersect(intersect(names(clin)[2:ncol(clin)],names(six)[2:ncol(six)]),
                         names(four)[2:ncol(four)])
 
@@ -25,8 +30,8 @@ venn::venn(snames=c(paste('clinical score pred\nN =',ncol(clin)-1),
            zcolor = RColorBrewer::brewer.pal(7,'Set1'),ilcs=2,sncs=1.25 )
 
 
-png(paste('~/Pictures/plots/Sheep_megadata/15.5.22/Venn.',N_clinical,
-          'clinical_params.png',sep=''),width=700,height=700)
+png(paste0(outdir,'/Venn.',N_clinical,
+          'clinical_params.png'),width=700,height=700)
 venn::venn(snames=c(paste('clinical score pred\nN =',ncol(clin)-1),
                     paste('six states pred\nN =',ncol(six)-1),
                     paste('four states pred\nN =',ncol(four)-1)),
@@ -35,8 +40,8 @@ venn::venn(snames=c(paste('clinical score pred\nN =',ncol(clin)-1),
            zcolor = RColorBrewer::brewer.pal(7,'Set1'),ilcs=2,sncs=1.25 )
 dev.off()
 
-pdf(paste('~/Pictures/plots/Sheep_megadata/15.5.22/Venn.',N_clinical,
-          'clinical_params.pdf',sep=''),width=10.00,height=10.00)
+pdf(paste0(outdir,'/Venn.',N_clinical,
+          'clinical_params.pdf'),width=10.00,height=10.00)
 venn::venn(snames=c(paste('clinical score pred\nN =',ncol(clin)-1),
                     paste('six states pred\nN =',ncol(six)-1),
                     paste('four states pred\nN =',ncol(four)-1)),
@@ -127,7 +132,7 @@ mat3=mat3[match(rownames(pca_dat),rownames(mat3)),]
 #write.csv(pca_dat,'/home/oscar/Documents/sheep_megadata/13.4.21/dat_plots_filt/metabolic.final.csv')
 
 ################################################
-comb_dat_funct_in=comb_dat;types_funct_convert=types_convert;xvar=50;clinkey=NA
+#test line: comb_dat_funct_in=comb_dat;types_funct_convert=types_convert;xvar=50;clinkey=NA
 
 gettop150=function(comb_dat_funct_in,types_funct_convert,clinkey=NA){
   comb_dat_funct=comb_dat_funct_in
@@ -197,6 +202,7 @@ types_convert[['SMC']]=types_convert[['SLC']]='control'
 
 top150_4=gettop150(comb_dat,types_convert)
 
+
 ##################################################
 
 clinicals_in=read.csv('/home/oscar/Documents/sheep_megadata/clinical_score_Oscar.csv')
@@ -257,8 +263,8 @@ new$parameters=substr(new$parameters,1,30)
 ggdata$sum=ggdata$clinical+ggdata$four_states+ggdata$six_states
 new$parameters=factor(new$parameters,levels=new$parameters[order(ggdata$sum,decreasing = T)])
 
-png(paste('~/Pictures/plots/Sheep_megadata/15.5.22//importance_fully_shared_params_using',N_clinical,
-          'clinical_params.png',sep=''),width=500,height=350)
+png(paste0(outdir,'/importance_fully_shared_params_using',N_clinical,
+          '_clinical_params.png'),width=500,height=350)
 ggplot(new,aes(y=importance,fill=variable,x=parameters))+
   geom_bar(stat='identity')+theme_bw()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=10.5))+
@@ -267,8 +273,8 @@ ggplot(new,aes(y=importance,fill=variable,x=parameters))+
 dev.off()
 
 
-pdf(paste('~/Pictures/plots/Sheep_megadata/15.5.22/importance_fully_shared_params_using',N_clinical,
-          'clinical_params.pdf',sep=''),width=7.00,height=6.00)
+pdf(paste0(outdir,'/importance_fully_shared_params_using',N_clinical,
+          '_clinical_params.pdf'),width=7.00,height=6.00)
 ggplot(new,aes(y=importance,fill=variable,x=parameters))+
   geom_bar(stat='identity')+theme_bw()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=10.5))+
@@ -324,8 +330,8 @@ new$parameters=factor(new$parameters,levels=substr(ggdata$parameters,1,30)[order
 ggdata[order(ggdata$sum,decreasing = T),]
 
 
-png(paste('~/Pictures/plots/Sheep_megadata/15.5.22/importance_any_pair_shared_params_using',N_clinical,
-          'clinical_params.png',sep=''),width=700,height=400)
+png(paste0(outdir,'/importance_any_pair_shared_params_using',N_clinical,
+          'clinical_params.png'),width=700,height=400)
 ggplot(new,aes(y=importance,fill=variable,x=parameters))+
   geom_bar(stat='identity')+theme_bw()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=10.5))+
@@ -333,8 +339,9 @@ ggplot(new,aes(y=importance,fill=variable,x=parameters))+
   ggtitle(paste('importance of',length(unique(new$parameters)),'parameters shared in any combination'))
 dev.off()
 
-pdf(paste('~/Pictures/plots/Sheep_megadata/15.5.22/importance_any_pair_shared_params_using',N_clinical,
-          'clinical_params.pdf',sep=''),width=10.00,height=7.00)
+pdf(paste0(outdir,'/importance_any_pair_shared_params_using',N_clinical,
+          'clinical_params.pdf'),width=10.00,height=7.00)
+
 ggplot(new,aes(y=importance,fill=variable,x=parameters))+
   geom_bar(stat='identity')+theme_bw()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=10.5))+

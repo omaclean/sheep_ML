@@ -10,7 +10,7 @@ mat2=read.csv('/home/oscar/Documents/sheep_megadata/14.9.21/dat_plots_filt/BTMs.
 mat2[1:2,1:2]
 #########################################
 
-outdir="/home/oscar/scripts/github/sheep_ML"
+outdir="/home/oscar/scripts/github/sheep_ML/outdir"
 
 ############################
 setwd("/home/oscar/Documents/sheep_megadata/14.9.21/")
@@ -110,7 +110,7 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
   RFE=rfe(x=comb_dat_funct[,hits], y=as.factor(types_funct2),rfeControl=rfcont,sizes=c(1:10,seq(12,xvar2,2)))
   
   ##
-  png(paste0(outdir,'/plots/Sheep_megadata/15.5.22/clinical_',
+  png(paste0(outdir,'/plots/clinical_',
             paste(unique(types_funct2),collapse='_'),'.png'),width=700,height=400)
   par(mfrow=c(1,2),mar=c(5,4,1,1))
   plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0,1),xlab='parameters',ylab='prediction accurracy',
@@ -122,10 +122,10 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
   if(xvar!=0){
     abline(v=xvar,col=wesanderson::wes_palette('Darjeeling1')[5],lty=2)
   }
-  plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0.3,.7),xlab='',ylab='',
+  plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0.35,.85),xlab='',ylab='',
        col=scales::alpha(wesanderson::wes_palette('Darjeeling1')[1],.6),pch=19)
   par(new=T)
-  plot(RFE$results$Variables,RFE$results$Accuracy,ylim=c(0.3,.7),
+  plot(RFE$results$Variables,RFE$results$Accuracy,ylim=c(0.35,.85),
        col=wesanderson::wes_palette('Darjeeling1')[2],type='l',
        xlab='parameters',ylab='prediction accuracy ZOOM')
   abline(v=RFE$bestSubset,col=wesanderson::wes_palette('Darjeeling1')[3],lty=2)
@@ -143,7 +143,7 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
   }
   dev.off()
   ##
-  pdf(paste0(outdir,'/plots/Sheep_megadata/15.5.22/clinical_',
+  pdf(paste0(outdir,'/plots/clinical_',
             paste(unique(types_funct2),collapse='_'),'.pdf'),width=12.0,height=7.0)
   par(mfrow=c(1,2),mar=c(5,4,1,1))
   plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0,1),xlab='parameters',ylab='prediction accurracy',
@@ -325,8 +325,7 @@ print(funct_outclinclass[[2]])
 print(funct_outclinclass2[[3]])
 substr(names(funct_outclinclass2[[1]])[order(funct_outclinclass2[[1]],decreasing=T)[1:30]],1,30)
 
-write.csv(funct_outclinclass[[2]],file=paste(
-  '/Pictures/plots/Sheep_megadata/15.5.22/clinical_RF_performance_table_',classes_N,'params.csv',sep=''))
+write.csv(funct_outclinclass[[2]],file=paste0(outdir,'/clinical_RF_performance_table_',classes_N,'params.csv'))
 output=funct_outclinclass[[2]][c(1,4,3,2),]
 output[,c(1,4,3,2)]
 
@@ -411,7 +410,7 @@ clinicals_in=clinicals_in[match(rownames(comb_dat),clinicals_in$ID),]
 clinicals_plot=clinicals_in$clinical.score[match(rownames(comb_dat),clinicals_in$ID)]
 
 comb_dat=comb_dat[order(clinicals_plot),]
-rownames(comb_dat)
+
 comb_dat=comb_dat[c(grep('SLC|SMC',rownames(comb_dat)),grep('SLC|SMC',rownames(comb_dat),invert=T)),]
 clinicals_plot=clinicals_in$clinical.score[match(rownames(comb_dat),clinicals_in$ID)]
 
@@ -424,13 +423,12 @@ plot(clinicals_plot)
 topotopparams= names(funct_outclinclass[[1]])[order(funct_outclinclass[[1]],decreasing=T)[1:funct_outclinclass[[3]]]]
 # topotopparams= names(funct_outclinclass2[[1]])[order(funct_outclinclass2[[1]],decreasing=T)[1:30]]
 
-write.csv(comb_dat,file=paste0(outdir,'/plots/Sheep_megadata/15.5.22/all_RF.data_clin.csv'))
-write.csv(comb_dat[,topotopparams],file=paste(outdir,'/plots/Sheep_megadata/15.5.22/clinical_score.data_',funct_outclinclass[[3]],
-                                              '.params.csv',sep=''))
+write.csv(comb_dat,file=paste0(outdir,'/all_RF.data_clin.csv'))
+write.csv(comb_dat[,topotopparams],file=paste0(outdir,'/clinical_score.data_',funct_outclinclass[[3]],
+                                              '.params.csv'))
 
-#comb_dat=read.csv(file='/home/oscar/Documents/sheep_megadata/14.9.21/RF_input_data/clinical_score.data.csv')
-rownames(comb_dat)=comb_dat[,1]
-comb_dat=comb_dat[,2:ncol(comb_dat)]
+
+#comb_dat=read.csv(file='/home/oscar/Documents/sheep_megadata/14.9.21/RF_input_data/clinical_score.data.csv',row.names=TRUE)
 
 #pheaty=apply(comb_dat,2,function(x) (log(x+1) - mean(log(x[grepl('SMC|SLC',rownames(comb_dat))]+1)))/sd(log(x[!is.na(x)]+1)))[,topotopparams]
 pheaty=apply(comb_dat[,topotopparams],2,function(x) ((x) - mean((x[grepl('SMC|SLC',rownames(comb_dat))])))/sd((x[!is.na(x)])))#[,topotopparams]
@@ -509,7 +507,7 @@ grid.abline(530.3,0,range='x')
 
 dev.off()
 
-png(paste0(outdir,'/plots/Sheep_megadata/15.5.22/clinical_pheatmap_',classes_N,'_params_',
+png(paste0(outdir,'/plots/clinical_pheatmap_',classes_N,'_params_',
           paste(unique(clinicals_discrete),collapse='_'),'.png'),width=1400,height=850)
 
 pheatmap((pheaty),
@@ -531,7 +529,7 @@ dev.off()
 
 
 
-png(paste0(outdir,'/plots/Sheep_megadata/15.5.22/clinical_pheatmap_no_lines_',classes_N,'_params_',
+png(paste0(outdir,'/plots/clinical_pheatmap_no_lines_',classes_N,'_params_',
           paste(unique(clinicals_discrete),collapse='_'),'.png'),width=1400,height=850)
 
 pheatmap((pheaty),
@@ -553,7 +551,7 @@ dev.off()
 
 
 
-pdf(paste0(outdir'/plots/Sheep_megadata/15.5.22/clinical_pheatmap_',classes_N,'_params_',
+pdf(paste0(outdir,'/plots/clinical_pheatmap_',classes_N,'_params_',
           paste(unique(clinicals_discrete),collapse='_'),'.pdf'),width=14.00,height=9.00)
 
 
@@ -574,7 +572,7 @@ grid.abline(510.3,0,range='x')
 dev.off()
 
 
-pdf(paste0(outdir,'/plots/Sheep_megadata/15.5.22/clinical_pheatmap_no_lines_',classes_N,'_params_',
+pdf(paste0(outdir,'/plots/clinical_pheatmap_no_lines_',classes_N,'_params_',
           paste(unique(clinicals_discrete),collapse='_'),'.pdf'),width=14.00,height=9.00)
 
 pheatmap((pheaty),
