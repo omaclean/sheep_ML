@@ -10,10 +10,12 @@ mat2=read.csv('/home/oscar/Documents/sheep_megadata/14.9.21/dat_plots_filt/BTMs.
 mat2[1:2,1:2]
 #########################################
 
-
+outdir="/home/oscar/scripts/github/sheep_ML"
 
 ############################
 setwd("/home/oscar/Documents/sheep_megadata/14.9.21/")
+
+outdir=gsub("/$","",outdir)
 library(ggplot2)
 library(plotly)
 library(gridExtra)
@@ -108,7 +110,7 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
   RFE=rfe(x=comb_dat_funct[,hits], y=as.factor(types_funct2),rfeControl=rfcont,sizes=c(1:10,seq(12,xvar2,2)))
   
   ##
-  png(paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/clinical_',
+  png(paste(outdir,'/plots/Sheep_megadata/15.5.22/clinical_',
             paste(unique(types_funct2),collapse='_'),'.png',sep='_'),width=700,height=400)
   par(mfrow=c(1,2),mar=c(5,4,1,1))
   plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0,1),xlab='parameters',ylab='prediction accurracy',
@@ -141,7 +143,7 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
   }
   dev.off()
   ##
-  pdf(paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/clinical_',
+  pdf(paste0(outdir,'/plots/Sheep_megadata/15.5.22/clinical_',
             paste(unique(types_funct2),collapse='_'),'.pdf',sep='_'),width=12.0,height=7.0)
   par(mfrow=c(1,2),mar=c(5,4,1,1))
   plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0,1),xlab='parameters',ylab='prediction accurracy',
@@ -422,8 +424,8 @@ plot(clinicals_plot)
 topotopparams= names(funct_outclinclass[[1]])[order(funct_outclinclass[[1]],decreasing=T)[1:funct_outclinclass[[3]]]]
 # topotopparams= names(funct_outclinclass2[[1]])[order(funct_outclinclass2[[1]],decreasing=T)[1:30]]
 
-write.csv(comb_dat,file='/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/all_RF.data_clin.csv')
-write.csv(comb_dat[,topotopparams],file=paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/clinical_score.data_',funct_outclinclass[[3]],
+write.csv(comb_dat,file=paste0(outdir,'/plots/Sheep_megadata/15.5.22/all_RF.data_clin.csv'))
+write.csv(comb_dat[,topotopparams],file=paste(outdir,'/plots/Sheep_megadata/15.5.22/clinical_score.data_',funct_outclinclass[[3]],
                                               '.params.csv',sep=''))
 
 #comb_dat=read.csv(file='/home/oscar/Documents/sheep_megadata/14.9.21/RF_input_data/clinical_score.data.csv')
@@ -507,8 +509,8 @@ grid.abline(530.3,0,range='x')
 
 dev.off()
 
-png(paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/clinical_pheatmap_',classes_N,'params',
-          paste(unique(clinicals_discrete),collapse='_'),'.png',sep='_'),width=1400,height=850)
+png(paste0(outdir,'/plots/Sheep_megadata/15.5.22/clinical_pheatmap_',classes_N,'_params_',
+          paste(unique(clinicals_discrete),collapse='_'),'.png',sep=''),width=1400,height=850)
 
 pheatmap((pheaty),
          cluster_rows=F,cluster_cols=T,treeheight_row = 0, treeheight_col = 0,
@@ -529,7 +531,7 @@ dev.off()
 
 
 
-png(paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/clinical_pheatmap_no_lines',classes_N,'params',
+png(paste0(outdir,'/plots/Sheep_megadata/15.5.22/clinical_pheatmap_no_lines_',classes_N,'_params_',
           paste(unique(clinicals_discrete),collapse='_'),'.png',sep='_'),width=1400,height=850)
 
 pheatmap((pheaty),
@@ -551,8 +553,8 @@ dev.off()
 
 
 
-pdf(paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/clinical_pheatmap_',classes_N,'params',
-          paste(unique(clinicals_discrete),collapse='_'),'.pdf',sep='_'),width=14.00,height=9.00)
+pdf(paste0(outdir'/plots/Sheep_megadata/15.5.22/clinical_pheatmap_',classes_N,'_params_',
+          paste(unique(clinicals_discrete),collapse='_'),'.pdf',sep=''),width=14.00,height=9.00)
 
 
 pheatmap((pheaty),
@@ -572,7 +574,7 @@ grid.abline(510.3,0,range='x')
 dev.off()
 
 
-pdf(paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/clinical_pheatmap_no_lines',classes_N,'params',
+pdf(paste(outdir,'/plots/Sheep_megadata/15.5.22/clinical_pheatmap_no_lines_',classes_N,'_params_',
           paste(unique(clinicals_discrete),collapse='_'),'.pdf',sep='_'),width=14.00,height=9.00)
 
 pheatmap((pheaty),
