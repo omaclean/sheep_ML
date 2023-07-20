@@ -110,8 +110,8 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
   RFE=rfe(x=comb_dat_funct[,hits], y=as.factor(types_funct2),rfeControl=rfcont,sizes=c(1:10,seq(12,xvar2,2)))
   
   ##
-  png(paste(outdir,'/plots/Sheep_megadata/15.5.22/clinical_',
-            paste(unique(types_funct2),collapse='_'),'.png',sep='_'),width=700,height=400)
+  png(paste0(outdir,'/plots/Sheep_megadata/15.5.22/clinical_',
+            paste(unique(types_funct2),collapse='_'),'.png'),width=700,height=400)
   par(mfrow=c(1,2),mar=c(5,4,1,1))
   plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0,1),xlab='parameters',ylab='prediction accurracy',
        col=scales::alpha(wesanderson::wes_palette('Darjeeling1')[1],.6),pch=19)
@@ -574,8 +574,8 @@ grid.abline(510.3,0,range='x')
 dev.off()
 
 
-pdf(paste(outdir,'/plots/Sheep_megadata/15.5.22/clinical_pheatmap_no_lines_',classes_N,'_params_',
-          paste(unique(clinicals_discrete),collapse='_'),'.pdf',sep='_'),width=14.00,height=9.00)
+pdf(paste0(outdir,'/plots/Sheep_megadata/15.5.22/clinical_pheatmap_no_lines_',classes_N,'_params_',
+          paste(unique(clinicals_discrete),collapse='_'),'.pdf'),width=14.00,height=9.00)
 
 pheatmap((pheaty),
          cluster_rows=F,cluster_cols=T,treeheight_row = 0, treeheight_col = 0,
