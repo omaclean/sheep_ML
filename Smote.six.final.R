@@ -1,6 +1,10 @@
 library(psych);library(ggplot2);library(caret);library(randomForest)
 dpi_plot='7'
 
+runs_of_RF=500;N_classes=50
+shuffle=FALSE
+
+outdir="/home/oscar/scripts/github/sheep_ML/outdir"
 counts=read.table('/home/oscar/Documents/sheep_megadata/RNA_Seq_1.12.20/All_Count.txt',header=T)
 #filter counts & BTMs so that gene is expressed in at least 2 conditions (on average)
 counts=counts[rowSums(counts[,2:ncol(counts)]>0)>14,]
@@ -20,6 +24,15 @@ library(gridExtra)
 library(RColorBrewer)
 library(Amelia)
 library(reshape2)
+library(caret)
+library(randomForest)
+library(smotefamily)
+
+if(shuffle==TRUE){
+    out_file_extra="SHUFFLED_"
+}else{out_file_extra=""}
+
+
 data=read.csv('combined/combined_sheet.csv',stringsAsFactors = F)
 #filter out SMI13, non dpi 7 data and <80% complete variables
 for(i in 3:ncol(data)){
@@ -81,9 +94,7 @@ mat3=mat3[match(rownames(pca_dat),rownames(mat3)),]
 ################################################
 ###################################################
 
-library(smotefamily)
-library(randomForest)
-library(caret)
+
 colnames(mat3)=paste('BTM:',colnames(mat3),sep='')
 #drop highly correlated
 #pca_dat=pca_dat[,sapply(colnames(pca_dat),function(x)!any(c('Conteggio.Globuli.Rossi..RBC.','GOT.AST.')==x))]#'TNF.alpha'
@@ -100,8 +111,8 @@ library(smotefamily)
 library(randomForest)
 
 
-runs_of_RF=500
-comb_dat_funct_in=bin1;types_funct_convert=types_convert;xvar=10
+
+
 # RUN_FILTRATION_AND_PREDICTION=function(comb_dat_funct_in,types_funct_convert,runs_of_RF_funct,xvar){
 #   comb_dat_funct=comb_dat_funct_in
 #   comb_dat_funct=comb_dat_funct[,!grepl('rectal|Albumin',colnames(comb_dat_funct))]
@@ -245,6 +256,11 @@ RUN_FILTRATION_AND_PREDICTION_imbalanced=function(comb_dat_funct_in,types_funct_
   types_funct=unlist(strsplit(rownames(comb_dat_funct),'-'))[(1:nrow(comb_dat_funct))*2-1]
   types_funct2=as.character(types_funct_convert[types_funct])
   
+  if(shuffle==TRUE){
+    comb_dat_funct=comb_dat_funct[sample(1:nrow(comb_dat_funct),replace = FALSE),]
+  }
+
+
   xvar2=150
   RF_1=randomForest(x=comb_dat_funct, y=as.factor(types_funct2),importance=T,do.trace = F,ntree=5000)
   hits=rownames(RF_1$importance)[order(RF_1$importance[,'MeanDecreaseGini'],decreasing = T)][1:xvar2]
@@ -252,62 +268,45 @@ RUN_FILTRATION_AND_PREDICTION_imbalanced=function(comb_dat_funct_in,types_funct_
   rfcont=rfeControl(functions=rfFuncs,repeats=5,verbose=F,rerank=F,method="repeatedcv",number=5)
   RFE=rfe(x=comb_dat_funct[,hits], y=as.factor(types_funct2),rfeControl=rfcont,sizes=c(1:10,seq(12,xvar2,2)))
   
+  plot_funct=function(){
+     par(mfrow=c(1,2),mar=c(5,4,1,1))
+    plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0,1),xlab='parameters',ylab='prediction accurracy',
+        col=scales::alpha(wesanderson::wes_palette('Darjeeling1')[1],.6),pch=19)
+    par(new=T)
+    plot(RFE$results$Variables,RFE$results$Accuracy,ylim=c(0,1),col=wesanderson::wes_palette('Darjeeling1')[2],type='l',xlab='',ylab='')
+    abline(v=RFE$bestSubset,col=wesanderson::wes_palette('Darjeeling1')[3],lty=2)
+    if(xvar!=0){
+      abline(v=xvar,col=wesanderson::wes_palette('Darjeeling1')[5],lty=2)
+    }
+    plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0.8,1),xlab='',ylab='',
+        col=scales::alpha(wesanderson::wes_palette('Darjeeling1')[1],.6),pch=19)
+    par(new=T)
+    plot(RFE$results$Variables,RFE$results$Accuracy,ylim=c(0.8,1),col=wesanderson::wes_palette('Darjeeling1')[2],type='l',xlab='parameters',ylab='prediction accuracy ZOOM')
+    abline(v=RFE$bestSubset,col=wesanderson::wes_palette('Darjeeling1')[3],lty=2)
+    if(xvar!=0){
+      abline(v=xvar,col=wesanderson::wes_palette('Darjeeling1')[5],lty=2)
+    }
+    if(xvar==0){
+      legend(legend=c('kappa','accuracy','"best" subset'),col=wesanderson::wes_palette('Darjeeling1')[1:3],lwd=2,bty='n',x='bottom')
+    }
+    else{
+      legend(legend=c('kappa','accuracy','"best" subset #','used subset #' ),col=wesanderson::wes_palette('Darjeeling1')[c(1:3,5)],
+            lwd=2,bty='n',x='topleft')
+    }
+  }
+
   ##
-  png(paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/six_states_',
-            paste(unique(types_funct2),collapse='_'),'.png',sep='_'),width=700,height=400)
-  par(mfrow=c(1,2),mar=c(5,4,1,1))
-  plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0,1),xlab='parameters',ylab='prediction accurracy',
-       col=scales::alpha(wesanderson::wes_palette('Darjeeling1')[1],.6),pch=19)
-  par(new=T)
-  plot(RFE$results$Variables,RFE$results$Accuracy,ylim=c(0,1),col=wesanderson::wes_palette('Darjeeling1')[2],type='l',xlab='',ylab='')
-  abline(v=RFE$bestSubset,col=wesanderson::wes_palette('Darjeeling1')[3],lty=2)
-  if(xvar!=0){
-    abline(v=xvar,col=wesanderson::wes_palette('Darjeeling1')[5],lty=2)
-  }
-  plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0.8,1),xlab='',ylab='',
-       col=scales::alpha(wesanderson::wes_palette('Darjeeling1')[1],.6),pch=19)
-  par(new=T)
-  plot(RFE$results$Variables,RFE$results$Accuracy,ylim=c(0.8,1),col=wesanderson::wes_palette('Darjeeling1')[2],type='l',xlab='parameters',ylab='prediction accuracy ZOOM')
-  abline(v=RFE$bestSubset,col=wesanderson::wes_palette('Darjeeling1')[3],lty=2)
-  if(xvar!=0){
-    abline(v=xvar,col=wesanderson::wes_palette('Darjeeling1')[5],lty=2)
-  }
-  if(xvar==0){
-    legend(legend=c('kappa','accuracy','"best" subset'),col=wesanderson::wes_palette('Darjeeling1')[1:3],lwd=2,bty='n',x='bottom')
-  }
-  else{
-    legend(legend=c('kappa','accuracy','"best" subset #','used subset #' ),col=wesanderson::wes_palette('Darjeeling1')[c(1:3,5)],
-           lwd=2,bty='n',x='topleft')
-  }
+  png(paste0(outdir,'/plots/six_states_',
+            paste(unique(types_funct2),collapse='_'),'.png'),width=700,height=400)
+    plot_funct()
   dev.off()
   ##
-  pdf(paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/six_states_',
-            paste(unique(types_funct2),collapse='_'),'.pdf',sep='_'),width=12.00,height=7.00)
-  par(mfrow=c(1,2),mar=c(5,4,1,1))
-  plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0,1),xlab='parameters',ylab='prediction accurracy',
-       col=scales::alpha(wesanderson::wes_palette('Darjeeling1')[1],.6),pch=19)
-  par(new=T)
-  plot(RFE$results$Variables,RFE$results$Accuracy,ylim=c(0,1),col=wesanderson::wes_palette('Darjeeling1')[2],type='l',xlab='',ylab='')
-  abline(v=RFE$bestSubset,col=wesanderson::wes_palette('Darjeeling1')[3],lty=2)
-  if(xvar!=0){
-    abline(v=xvar,col=wesanderson::wes_palette('Darjeeling1')[5],lty=2)
-  }
-  plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0.8,1),xlab='',ylab='',
-       col=scales::alpha(wesanderson::wes_palette('Darjeeling1')[1],.6),pch=19)
-  par(new=T)
-  plot(RFE$results$Variables,RFE$results$Accuracy,ylim=c(0.8,1),col=wesanderson::wes_palette('Darjeeling1')[2],type='l',xlab='parameters',ylab='prediction accuracy ZOOM')
-  abline(v=RFE$bestSubset,col=wesanderson::wes_palette('Darjeeling1')[3],lty=2)
-  if(xvar!=0){
-    abline(v=xvar,col=wesanderson::wes_palette('Darjeeling1')[5],lty=2)
-  }
-  if(xvar==0){
-    legend(legend=c('kappa','accuracy','"best" subset'),col=wesanderson::wes_palette('Darjeeling1')[1:3],lwd=2,bty='n',x='bottom')
-  }
-  else{
-    legend(legend=c('kappa','accuracy','"best" subset #','used subset #' ),col=wesanderson::wes_palette('Darjeeling1')[c(1:3,5)],
-           lwd=2,bty='n',x='topleft')
-  }
+  pdf(paste0(outdir,'/plots/six_states_',
+            paste(unique(types_funct2),collapse='_'),'.pdf'),
+            width=12.00,height=7.00)
+    plot_funct()
   dev.off()
+
   if(xvar==0){
     xvar=RFE$optsize
   }
@@ -330,6 +329,11 @@ RUN_FILTRATION_AND_PREDICTION_imbalanced=function(comb_dat_funct_in,types_funct_
     
     library(caret);library(randomForest)
     
+    if(shuffle==TRUE){
+      comb_dat_funct=comb_dat_funct[sample(1:nrow(comb_dat_funct),replace = FALSE),]
+    }
+
+
     holdouts=c()
     for(i in unique(types_funct2)){
       holdouts=c(holdouts,sample(which(types_funct2==i),2))
@@ -383,14 +387,22 @@ RUN_FILTRATION_AND_PREDICTION_imbalanced=function(comb_dat_funct_in,types_funct_
   
   for(test in 1:runs_of_RF){
     comb_dat_funct=comb_dat_funct_in
+    #only use top parameters selected by above model
     comb_dat_funct=comb_dat_funct[,names(hits_final_funct)]
     
     types_funct=unlist(strsplit(rownames(comb_dat_funct),'-'))[(1:nrow(comb_dat_funct))*2-1]
     types_funct2=as.character(types_funct_convert[types_funct])
-    #drop highly correlated
-    #pca_dat=pca_dat[,sapply(colnames(pca_dat),function(x)!any(c('MIP.1.alpha','IL.1alpha','GOT.AST.')==x))]
-    
-    library(caret);library(randomForest)
+    #if set to shuffle mode rotate sample order data each loop
+    if(shuffle==TRUE){
+        comb_dat_funct=comb_dat_funct[sample(1:nrow(comb_dat_funct),replace = FALSE),]
+    }
+    #test correct parameters chosen
+    if(ncol(comb_dat_funct)!=xvar){
+      print('error param choice not working for confusion matrix')
+    }
+
+
+
     holdouts=c()
     for(i in unique(types_funct2)){
       holdouts=c(holdouts,sample(which(types_funct2==i),2))
@@ -488,10 +500,11 @@ layout(xaxis=list(title=paste('PC',axis[1],' var prop=', round(100*pca$sdev[axis
 
 
 bin1=comb_dat
-N_classes=50
+
 funct_out_7_cats_comb=RUN_FILTRATION_AND_PREDICTION_imbalanced(bin1,types_convert,runs_of_RF,N_classes)
 
-write.csv(funct_out_7_cats_comb[[2]],file=paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/six_states_performance_table_Nparams',classes_N,'.csv',sep=''))
+write.csv(funct_out_7_cats_comb[[2]],file=paste0(outdir,'/six_states_performance_table_Nparams',
+        out_file_extra,N_classes,'.csv'))
 
 plot(funct_out_7_cats_comb[[1]])
 
@@ -508,6 +521,10 @@ hits_final_7_cats_comb=names(funct_out_7_cats_comb[[1]])[
   order(funct_out_7_cats_comb[[1]],decreasing=T)[1:funct_out_7_cats_comb[[3]]]]
 
 ########################
+
+if(shuffle==T){
+  stop("no point generating heatmaps for shuffled data")
+}
 
 ################ heatmap#####################################
 ################ heatmap#####################################
@@ -572,9 +589,9 @@ clinicals_plot=clinicals_in$clinical.score[match(rownames(comb_dat),clinicals_in
 
 topotopparams=hits_final_7_cats_comb
 
-write.csv(comb_dat,file='/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/all_RF.data.csv')
-write.csv(comb_dat[,topotopparams],file=paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/final_six_states.data',
-                                              N_classes,'params.csv',sep=''))
+write.csv(comb_dat,file=paste0(outdir,'/all_RF.data_','six_states',out_file_extra,'.csv'))
+write.csv(comb_dat[,topotopparams],file=paste0(outdir,'/final_six_states.data',
+                                              N_classes,out_file_extra,'params.csv',sep=''))
 
 pheaty=apply(comb_dat,2,function(x) (log(x+1) - mean(log(x[grepl('SMC|SLC',rownames(comb_dat))]+1)))/sd(log(x[!is.na(x)]+1)))[,topotopparams]
 pheaty=apply(comb_dat,2,function(x) ((x) - mean((x[grepl('SMC|SLC',rownames(comb_dat))])))/sd((x[!is.na(x)])))[,topotopparams]
@@ -619,8 +636,8 @@ grid.abline(607.5,0,range='x')
 
 dev.off()
 
-png(paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/six_states_heatmap',
-            N_classes,'params.png',sep=''),width=700,height=896)#871
+png(paste0(outdir,'/six_states_heatmap',
+            N_classes,'params.png'),width=700,height=896)#871
 
 pheatmap((pheaty),
          cluster_rows=F,cluster_cols=T,treeheight_row = 0, treeheight_col = 0,
@@ -637,7 +654,7 @@ grid.abline(607.5,0,range='x')
 #grid.abline(649.5,0,range='x')
 dev.off()
 
-png(paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/six_states_heatmap_no_lines',
+png(paste0(outdir,'/plots/six_states_heatmap_no_lines',
           N_classes,'params.png',sep=''),width=700,height=896)#871
 
 pheatmap((pheaty),
@@ -647,7 +664,7 @@ dev.off()
 
 
 
-svg(paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/six_states_heatmap',
+svg(paste0(outdir,'/plots/six_states_heatmap',
           N_classes,'params.svg',sep=''),width=7.00,height=12.05)
 #950 long
 pheatmap((pheaty),
@@ -667,7 +684,7 @@ grid.abline(605,0,range='x')
 dev.off()
 
 
-pdf(paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/six_states_heatmap',
+pdf(paste0(outdir,'/plots/six_states_heatmap',
           N_classes,'params.pdf',sep=''),width=8.50,height=10.05)#10.05)
 #950 long
 pheatmap((pheaty),
@@ -688,7 +705,7 @@ dev.off()
 
 
 
-pdf(paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/six_states_heatmap_no_lines',
+pdf(paste0(outdir,'/plots/six_states_heatmap_no_lines',
           N_classes,'params.pdf',sep=''),width=8.50,height=10.05)#10.05)
 #950 long
 pheatmap((pheaty),

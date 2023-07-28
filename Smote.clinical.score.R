@@ -1,8 +1,8 @@
 library(psych);library(ggplot2);library(caret);library(randomForest)
 dpi_plot='7'
 
-runs_of_RF=500;classes_N=30
-shuffle=FALSE
+runs_of_RF=500;classes_N=100
+shuffle=TRUE
 
 counts=read.table('/home/oscar/Documents/sheep_megadata/RNA_Seq_1.12.20/All_Count.txt',header=T)
 #filter counts & BTMs so that gene is expressed in at least 2 conditions (on average)
@@ -52,10 +52,9 @@ cols=c("#20B2AA",brewer.pal(6,"Reds")[1+c(1,3,5,4,2)])
 
 
 #if data to be shuffled to show performance of RF not random:
-
-  if(shuffle==T){
-      out_file_extra="SHUFFLED_"
-  }else{out_file_extra=""}
+if(shuffle==T){
+    out_file_extra="SHUFFLED_"
+}else{out_file_extra=""}
 
 
 # pca_dat=amelia(data[,3:ncol(data)],logs=colnames(data)[3:ncol(data)])$imputations$imp1
@@ -116,7 +115,7 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
   xvar2=150
   if(shuffle==TRUE){
       comb_dat_funct=comb_dat_funct[sample(1:nrow(comb_dat_funct),replace = FALSE),]
-  }else{out_file_extra=""}
+  }
 
   RF_1=randomForest(x=comb_dat_funct, y=as.factor(types_funct2),importance=T,do.trace = F,ntree=5000)
   hits=rownames(RF_1$importance)[order(RF_1$importance[,'MeanDecreaseGini'],decreasing = T)][1:xvar2]

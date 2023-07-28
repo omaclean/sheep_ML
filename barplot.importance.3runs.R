@@ -15,11 +15,15 @@ library(psych)
 
 outdir="/home/oscar/scripts/github/sheep_ML/outdir/barplots"
 
+
+indir="/home/oscar/scripts/github/sheep_ML/outdir"
 N_clinical=100
-clin=read.csv(paste('/home/oscar/Pictures/plots/Sheep_megadata/15.5.22/clinical_score.data_',
-                          N_clinical,'.params.csv',sep=''))
-four=read.csv('~/Pictures/plots/Sheep_megadata/15.5.22/final_four.data.17params.csv')
-six=read.csv('~/Pictures/plots/Sheep_megadata/15.5.22/final_six_states.data50params.csv')
+N_fourstates=17
+N_sixstates=50
+clin=read.csv(paste0(indir,'/clinical_score.data_',N_clinical,'.params.csv',sep=''))
+four=read.csv(paste0(indir,"/final_four.data.",N_fourstates,'params.csv'))
+six=read.csv(paste0(indir,"/final_six_states.data",N_sixstates,'params.csv'))
+
 
 
 #################code
@@ -240,11 +244,11 @@ ggdata=data.frame(parameters=shared_params)
 clean_names=function(x){
   x=gsub('BTM\\.','BTM:',x)
   x=gsub('combine\\.\\.','combine(',x)
-  x=gsub('combine\\(','comb(',x)
+  #x=gsub('combine\\(','comb(',x)
   x=gsub('\\.\\.','\\.',x)
   x=gsub('\\.\\.','\\.',x)
   x=substr(x,1,50)
-  x[x=="IFN_y"|x=="IFN.y"]="IFN_gamma"
+  x[x=="IFN_y"|x=="IFN.y"]="IFN_y"
   return(x)
 }
 
