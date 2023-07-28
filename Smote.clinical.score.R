@@ -22,6 +22,7 @@ library(gridExtra)
 library(RColorBrewer)
 library(Amelia)
 library(reshape2)
+library(wesanderson)
 data=read.csv('combined/combined_sheet.csv',stringsAsFactors = F)
 #filter out SMI13, non dpi 7 data and <80% complete variables
 for(i in 3:ncol(data)){
@@ -304,10 +305,12 @@ comb_dat=comb_dat[order(clinicals_in$clinical.score[match(animals,clinicals_in$I
 clinicals=clinicals_in$clinical.score[match(animals,clinicals_in$ID)]
 names(clinicals)=animals # bad coding makes this necessary for function
 
+
 convert_clinicals=list()
 convert_clinicals[['0']]=convert_clinicals[['1']]=convert_clinicals[['2']]='inf clin_score 0-2'
 convert_clinicals[['3']]=convert_clinicals[['4']]=convert_clinicals[['5']]='inf clin_score 3-5'
 convert_clinicals[['6']]=convert_clinicals[['7']]=convert_clinicals[['8']]='inf clin_score 6-8'
+groups_hierarchy=c("control","inf clin_score 0-2","inf clin_score 3-5","inf clin_score 6-8")
 clinicals_discrete=rep('control',length(animals))
 clinicals_discrete[!grepl('SMC|SLC',animals)]=
   unlist(convert_clinicals[as.character(clinicals[!grepl('SMC|SLC',animals)])])
@@ -325,10 +328,12 @@ print(funct_outclinclass[[2]])
 print(funct_outclinclass2[[3]])
 substr(names(funct_outclinclass2[[1]])[order(funct_outclinclass2[[1]],decreasing=T)[1:30]],1,30)
 
-write.csv(funct_outclinclass[[2]],file=paste0(outdir,'/clinical_RF_performance_table_',classes_N,'params.csv'))
-output=funct_outclinclass[[2]][c(1,4,3,2),]
-output[,c(1,4,3,2)]
+confusion_out=funct_outclinclass[[2]]
+confusion_out=confusion_out[,groups_hierarchy]
+confusion_out=confusion_out[groups_hierarchy,]
+write.csv(confusion_out,file=paste0(outdir,'/clinical_RF_performance_table_',classes_N,'params.csv'))
 
+knitr::kable(confusion_out)
 #return(list(table(param_hits),confusion,xvar,RF_1$importance[,ncol(RF_1$importance)],RFE$results$Kappa,scores))
 
 par(mfrow=c(1,1))
