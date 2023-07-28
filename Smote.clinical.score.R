@@ -1,6 +1,9 @@
 library(psych);library(ggplot2);library(caret);library(randomForest)
 dpi_plot='7'
 
+runs_of_RF=500;classes_N=30
+shuffle=FALSE
+
 counts=read.table('/home/oscar/Documents/sheep_megadata/RNA_Seq_1.12.20/All_Count.txt',header=T)
 #filter counts & BTMs so that gene is expressed in at least 2 conditions (on average)
 counts=counts[rowSums(counts[,2:ncol(counts)]>0)>14,]
@@ -46,6 +49,13 @@ data=data[data$dpi==dpi_plot&!grepl('SLI13',data$ID),]
 data=data[,(colSums(is.na(data))<0.19*nrow(data))]
 
 cols=c("#20B2AA",brewer.pal(6,"Reds")[1+c(1,3,5,4,2)])
+
+
+#if data to be shuffled to show performance of RF not random:
+
+  if(shuffle==T){
+      out_file_extra="SHUFFLED_"
+  }else{out_file_extra=""}
 
 
 # pca_dat=amelia(data[,3:ncol(data)],logs=colnames(data)[3:ncol(data)])$imputations$imp1
@@ -104,6 +114,10 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
   comb_dat_funct=comb_dat_funct[,!grepl('rectal|Albumin',colnames(comb_dat_funct))]
   types_funct2=types_funct_in
   xvar2=150
+  if(shuffle==TRUE){
+      comb_dat_funct=comb_dat_funct[sample(1:nrow(comb_dat_funct),replace = FALSE),]
+  }else{out_file_extra=""}
+
   RF_1=randomForest(x=comb_dat_funct, y=as.factor(types_funct2),importance=T,do.trace = F,ntree=5000)
   hits=rownames(RF_1$importance)[order(RF_1$importance[,'MeanDecreaseGini'],decreasing = T)][1:xvar2]
   
@@ -111,9 +125,9 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
   RFE=rfe(x=comb_dat_funct[,hits], y=as.factor(types_funct2),rfeControl=rfcont,sizes=c(1:10,seq(12,xvar2,2)))
   
   ##
-  png(paste0(outdir,'/plots/clinical_',
-            paste(unique(types_funct2),collapse='_'),'.png'),width=700,height=400)
-  par(mfrow=c(1,2),mar=c(5,4,1,1))
+
+  plot_loop_fun=function(){
+    par(mfrow=c(1,2),mar=c(5,4,1,1))
   plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0,1),xlab='parameters',ylab='prediction accurracy',
        col=scales::alpha(wesanderson::wes_palette('Darjeeling1')[1],.6),pch=19)
   par(new=T)
@@ -123,10 +137,10 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
   if(xvar!=0){
     abline(v=xvar,col=wesanderson::wes_palette('Darjeeling1')[5],lty=2)
   }
-  plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0.35,.85),xlab='',ylab='',
+  plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0.35,.8),xlab='',ylab='',
        col=scales::alpha(wesanderson::wes_palette('Darjeeling1')[1],.6),pch=19)
   par(new=T)
-  plot(RFE$results$Variables,RFE$results$Accuracy,ylim=c(0.35,.85),
+  plot(RFE$results$Variables,RFE$results$Accuracy,ylim=c(0.35,.8),
        col=wesanderson::wes_palette('Darjeeling1')[2],type='l',
        xlab='parameters',ylab='prediction accuracy ZOOM')
   abline(v=RFE$bestSubset,col=wesanderson::wes_palette('Darjeeling1')[3],lty=2)
@@ -135,45 +149,23 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
   }
   if(xvar==0){
     legend(legend=c('kappa','accuracy','"best" subset'),col=wesanderson::wes_palette('Darjeeling1')[c(1:3)],
-           lwd=2,bty='n',x='bottom',lty=c(1,1,2))
+           lwd=2,bty='n',x='topleft',lty=c(1,1,2))
   }
   else{
     legend(legend=c('kappa','accuracy','"best" subset #','used subset #' ),
            col=wesanderson::wes_palette('Darjeeling1')[c(1:3,5)],lwd=2,bty='n',x='topleft',
            lty=c(1,1,2,2))
   }
+  }
+ 
+  png(paste0(outdir,'/plots/clinical_',out_file_extra,
+            paste(unique(types_funct2),collapse='_'),'.png'),width=700,height=400)
+  plot_loop_fun()
   dev.off()
   ##
-  pdf(paste0(outdir,'/plots/clinical_',
+  pdf(paste0(outdir,'/plots/clinical_',out_file_extra,
             paste(unique(types_funct2),collapse='_'),'.pdf'),width=12.0,height=7.0)
-  par(mfrow=c(1,2),mar=c(5,4,1,1))
-  plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0,1),xlab='parameters',ylab='prediction accurracy',
-       col=wesanderson::wes_palette('Darjeeling1')[1],pch=19)
-  par(new=T)
-  plot(RFE$results$Variables,RFE$results$Accuracy,ylim=c(0,1),
-       col=wesanderson::wes_palette('Darjeeling1')[2],type='l',xlab='',ylab='')
-  abline(v=RFE$bestSubset,col=wesanderson::wes_palette('Darjeeling1')[3],lty=2)
-  if(xvar!=0){
-    abline(v=xvar,col=wesanderson::wes_palette('Darjeeling1')[5],lty=2)
-  }
-  plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0.4,.7),xlab='',ylab='',
-       col=wesanderson::wes_palette('Darjeeling1')[1],pch=19)
-  par(new=T)
-  plot(RFE$results$Variables,RFE$results$Accuracy,ylim=c(0.4,.7),col=
-         wesanderson::wes_palette('Darjeeling1')[2],type='l',xlab='parameters',ylab='prediction accuracy ZOOM')
-  abline(v=RFE$bestSubset,col=wesanderson::wes_palette('Darjeeling1')[3],lty=2)
-  if(xvar!=0){
-    abline(v=xvar,col=wesanderson::wes_palette('Darjeeling1')[5],lty=2)
-  }
-  if(xvar==0){
-    legend(legend=c('kappa','accuracy','"best" subset'),
-           col=wesanderson::wes_palette('Darjeeling1')[c(1:3)],lwd=2,bty='n',x='bottom',lty=c(1,1,2))
-  }
-  else{
-    legend(legend=c('kappa','accuracy','"best" subset #','used subset #' ),
-           col=wesanderson::wes_palette('Darjeeling1')[c(1:3,5)],lwd=2,bty='n',x='topleft',lty=c(1,1,2,2))
-  }
-  dev.off()
+  
   if(xvar==0){
     xvar=RFE$optsize
   }
@@ -191,7 +183,12 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
   for(test in 1:runs_of_RF){
     comb_dat_funct=comb_dat_funct_in
     comb_dat_funct=comb_dat_funct[,!grepl('rectal|Albumin',colnames(comb_dat_funct))]
-    
+    #if set to shuffle mode rotate sample order data each loop
+  if(shuffle==TRUE){
+      comb_dat_funct=comb_dat_funct[sample(1:nrow(comb_dat_funct),replace = FALSE),]
+  }
+
+
     types_funct2=types_funct_in
     #drop highly correlated
     #pca_dat=pca_dat[,sapply(colnames(pca_dat),function(x)!any(c('MIP.1.alpha','IL.1alpha','GOT.AST.')==x))]
@@ -230,7 +227,7 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
     hits=rownames(RF$importance)[order(RF$importance[,'MeanDecreaseGini'],decreasing = T)][1:xvar]
     
     param_hits=c(param_hits,hits)
-    
+
     RF=randomForest(x=comb_dat_funct[,hits], y=as.factor(types_funct2),importance=T,do.trace = F)
     scores=cbind(scores,rbind(names(clinicals)[holdouts],types_funct2_test,
                               as.character(predict(RF,newdata=comb_dat_funct_test))))
@@ -273,7 +270,7 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
       comb_dat_funct=rbind(comb_dat_funct,smote_test$syn_data[1:7,1:(ncol(smote_test$syn_data)-1)])
       types_funct2=c(types_funct2,smote_test$syn_data$class[1:7])
     }
-    
+        # generate new random forest model each loop with new holdouts
     RF=randomForest(x=comb_dat_funct, y=as.factor(types_funct2),importance=T,do.trace = F)
     scores=cbind(scores,rbind(names(clinicals)[holdouts],
                               types_funct2_test,as.character(predict(RF,newdata=comb_dat_funct_test))))
@@ -315,23 +312,26 @@ clinicals_discrete=rep('control',length(animals))
 clinicals_discrete[!grepl('SMC|SLC',animals)]=
   unlist(convert_clinicals[as.character(clinicals[!grepl('SMC|SLC',animals)])])
 
-comb_dat_funct_in=bin1=comb_dat;runs_of_RF=500;classes_N=100;types_funct_in=clinicals_discrete
+comb_dat_funct_in=bin1=comb_dat;types_funct_in=clinicals_discrete
 ############## RUN it!
 
+#run with defined optimal parameter numbers first
 funct_outclinclass=RUN_FILTRATION_AND_PREDICTION_clin_imbalanced(bin1,clinicals_discrete,runs_of_RF,classes_N)
 
-bin2=bin1[!grepl('SMC|SLC',rownames(bin1)),];clinicals_discrete2=clinicals_discrete[!grepl('SMC|SLC',rownames(bin1))]
-funct_outclinclass2=RUN_FILTRATION_AND_PREDICTION_clin_imbalanced(bin2,clinicals_discrete2,runs_of_RF,0)
+# bin2=bin1[!grepl('SMC|SLC',rownames(bin1)),];clinicals_discrete2=clinicals_discrete[!grepl('SMC|SLC',rownames(bin1))]
+# #run again without SMC and SLC, with no set number of parameters
+# funct_outclinclass2=RUN_FILTRATION_AND_PREDICTION_clin_imbalanced(bin2,clinicals_discrete2,runs_of_RF,0)
+# print(funct_outclinclass2[[3]])
+# substr(names(funct_outclinclass2[[1]])[order(funct_outclinclass2[[1]],decreasing=T)[1:30]],1,30)
+
 plot((funct_outclinclass[[5]]))
 
 print(funct_outclinclass[[2]])
-print(funct_outclinclass2[[3]])
-substr(names(funct_outclinclass2[[1]])[order(funct_outclinclass2[[1]],decreasing=T)[1:30]],1,30)
 
 confusion_out=funct_outclinclass[[2]]
 confusion_out=confusion_out[,groups_hierarchy]
 confusion_out=confusion_out[groups_hierarchy,]
-write.csv(confusion_out,file=paste0(outdir,'/clinical_RF_performance_table_',classes_N,'params.csv'))
+write.csv(confusion_out,file=paste0(outdir,'/clinical_RF_performance_table_',out_file_extra,classes_N,'params.csv'))
 
 knitr::kable(confusion_out)
 #return(list(table(param_hits),confusion,xvar,RF_1$importance[,ncol(RF_1$importance)],RFE$results$Kappa,scores))
@@ -358,7 +358,7 @@ substr(names(funct_outclinclass[[1]])[order(funct_outclinclass[[1]],decreasing=T
 
 
 
-
+if(shuffle==TRUE){stop("no point making heatmaps for shuffled datasets")}
 
 
 ################ heatmap#####################################
@@ -428,8 +428,8 @@ plot(clinicals_plot)
 topotopparams= names(funct_outclinclass[[1]])[order(funct_outclinclass[[1]],decreasing=T)[1:funct_outclinclass[[3]]]]
 # topotopparams= names(funct_outclinclass2[[1]])[order(funct_outclinclass2[[1]],decreasing=T)[1:30]]
 
-write.csv(comb_dat,file=paste0(outdir,'/all_RF.data_clin.csv'))
-write.csv(comb_dat[,topotopparams],file=paste0(outdir,'/clinical_score.data_',funct_outclinclass[[3]],
+write.csv(comb_dat,file=paste0(outdir,'/all_RF.data_clin',out_file_extra,'.csv'))
+write.csv(comb_dat[,topotopparams],file=paste0(outdir,'/clinical_score.data_',out_file_extra,funct_outclinclass[[3]],
                                               '.params.csv'))
 
 
