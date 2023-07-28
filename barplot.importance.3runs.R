@@ -1,5 +1,18 @@
 ###############################################
 
+library(venn)
+library(smotefamily)
+library(randomForest)
+library(caret)
+library(ggplot2)
+library(plotly)
+library(gridExtra)
+library(RColorBrewer)
+library(Amelia)
+library(reshape2)
+library(psych)
+
+
 outdir="/home/oscar/scripts/github/sheep_ML/outdir/barplots"
 
 N_clinical=100
@@ -11,9 +24,11 @@ six=read.csv('~/Pictures/plots/Sheep_megadata/15.5.22/final_six_states.data50par
 
 #################code
 outdir=gsub("/$","",outdir)
+#find params shared in all three models
 shared_params=intersect(intersect(names(clin)[2:ncol(clin)],names(six)[2:ncol(six)]),
                         names(four)[2:ncol(four)])
 
+#find params shared in any combo of three models
 shared_once_params=unique(c(intersect(names(clin)[2:ncol(clin)],names(six)[2:ncol(six)]),
                             intersect(names(six)[2:ncol(six)],names(four)[2:ncol(four)]),
                             intersect(names(clin)[2:ncol(clin)],names(four)[2:ncol(four)])
@@ -22,12 +37,6 @@ shared_once_params=unique(c(intersect(names(clin)[2:ncol(clin)],names(six)[2:nco
 param_sets=list(clinical=names(clin)[2:ncol(clin)],six_states=names(six)[2:ncol(six)],
                 four_states=names(four)[2:ncol(four)])
 
-venn::venn(snames=c(paste('clinical score pred\nN =',ncol(clin)-1),
-                    paste('six states pred\nN =',ncol(six)-1),
-                    paste('four states pred\nN =',ncol(four)-1)),
-           unname(param_sets),
-           ilabels=T,
-           zcolor = RColorBrewer::brewer.pal(7,'Set1'),ilcs=2,sncs=1.25 )
 
 
 png(paste0(outdir,'/Venn.',N_clinical,
@@ -51,14 +60,14 @@ venn::venn(snames=c(paste('clinical score pred\nN =',ncol(clin)-1),
 dev.off()
 
 ################################################
-library(psych);library(ggplot2);library(caret);library(randomForest)
-dpi_plot='7'
+dpi_plot='7' #what day's clinical scores to use
 
-counts=read.table('/home/oscar/Documents/sheep_megadata/RNA_Seq_1.12.20/All_Count.txt',header=T)
-#filter counts & BTMs so that gene is expressed in at least 2 conditions (on average)
-counts=counts[rowSums(counts[,2:ncol(counts)]>0)>14,]
+# #read in RNA seq raw counts -not needed in this script
+# counts=read.table('/home/oscar/Documents/sheep_megadata/RNA_Seq_1.12.20/All_Count.txt',header=T)
+# #filter counts & BTMs so that gene is expressed in at least 2 conditions (on average)
+# counts=counts[rowSums(counts[,2:ncol(counts)]>0)>14,]
 
-
+#read in raw BTM params
 mat2=read.csv('/home/oscar/Documents/sheep_megadata/30.6.21/dat_plots_filt/BTMs.final.csv',row.names = 1)
 mat2[1:2,1:2]
 #########################################
@@ -67,37 +76,33 @@ mat2[1:2,1:2]
 
 ############################
 setwd("/home/oscar/Documents/sheep_megadata/30.6.21/")
-library(ggplot2)
-library(plotly)
-library(gridExtra)
-library(RColorBrewer)
-library(Amelia)
-library(reshape2)
+
 data=read.csv('combined/combined_sheet.csv',stringsAsFactors = F)
 #filter out SMI13, non dpi 7 data and <80% complete variables
 for(i in 3:ncol(data)){
-  if(length(which(is.na(data[data$dpi==7&grepl('SLC',data$ID),i])))==7){
-    data[data$dpi==7&grepl('SLC',data$ID),i]=data[data$dpi==21&grepl('SLC',data$ID),i]
+  if(length(which(is.na(data[data$dpi==dpi_plot&grepl('SLC',data$ID),i])))==dpi_plot){
+    data[data$dpi==dpi_plot&grepl('SLC',data$ID),i]=data[data$dpi==21&grepl('SLC',data$ID),i]
   }
-  if(length(which(is.na(data[data$dpi==7&grepl('SLI6',data$ID),i])))==7){
+  #if dpi 7 data missing fill in from neighbouring days
+  if(length(which(is.na(data[data$dpi==dpi_plot&grepl('SLI6',data$ID),i])))==dpi_plot){
     for(j in grep('SLI6',data$ID,value=T)){
-      data[data$dpi==7&grepl(j,data$ID),i]=data[which(
+      data[data$dpi==dpi_plot&grepl(j,data$ID),i]=data[which(
         !is.na(data[,i])&
-          data$dpi>7&
+          data$dpi>dpi_plot&
           grepl(j,data$ID))[1]
         ,i]
     }
-    data[data$dpi==7&!grepl('SLC',data$ID),i]=data[,i]
+    data[data$dpi==dpi_plot&!grepl('SLC',data$ID),i]=data[,i]
   }
 }
 
-data=data[data$dpi==7&!grepl('SLI13',data$ID),]
-
-cbind(colnames(data),colSums(is.na(data))/ncol(data))
+data=data[data$dpi==dpi_plot&!grepl('SLI13',data$ID),]
 
 
+#remove variables with >20% missing data
 data=data[,(colSums(is.na(data))<0.2*nrow(data))]
 
+#set colours for plotting
 cols=c("#20B2AA",brewer.pal(6,"Reds")[1+c(1,3,5,4,2)])
 
 
@@ -115,12 +120,10 @@ for(i in 1:ncol(pca_dat)){
   }
   pca_dat[,i]=as.numeric(pca_dat[,i])
 }
-
+#make rownames the animal ID and day
 rownames(pca_dat)=paste(data$ID,data$dpi,sep='_')
-dim(pca_dat)
 
 metabol_dat_save=pca_dat
-colnames(pca_dat)
 ###################################################################
 
 colnames(mat2)=  sapply(colnames(mat2),function(x) 
@@ -152,16 +155,15 @@ gettop150=function(comb_dat_funct_in,types_funct_convert,clinkey=NA){
   RF=randomForest(x=comb_dat_funct[,hits], y=as.factor(types_funct2),importance=T,do.trace = F,ntree=5000)
   
   gini= RF$importance[,'MeanDecreaseGini']
+  
+  print(c("SUM of all params gini importances::",sum(gini)))
   head(names(gini))
   top150=gini[order(gini,decreasing = T)[1:150]]
-  head((top150))
   return(top150)
 }
 ###################################################
 
-library(smotefamily)
-library(randomForest)
-library(caret)
+
 colnames(mat3)=paste('BTM:',colnames(mat3),sep='')
 #drop highly correlated
 #pca_dat=pca_dat[,sapply(colnames(pca_dat),function(x)!any(c('Conteggio.Globuli.Rossi..RBC.','GOT.AST.')==x))]#'TNF.alpha'
@@ -173,8 +175,6 @@ colnames(comb_dat)=gsub("[[:blank:]]", "", colnames(comb_dat))
 colnames(comb_dat)=gsub('\\.\\.','\\.',colnames(comb_dat))
 colnames(comb_dat)=gsub('\\.\\.','\\.',colnames(comb_dat))
 colnames(comb_dat)=gsub('\\)','',colnames(comb_dat))
-library(smotefamily)
-library(randomForest)
 
 
 
@@ -228,11 +228,7 @@ top150_clin=gettop150(comb_dat,types_convert,clinicals_discrete)
 
 
 ##
-shared_params=gsub('BTM\\.','BTM:',shared_params)
-shared_params=gsub('combine\\.\\.','combine(',shared_params)
-shared_params=gsub('\\.\\.','\\.',shared_params)
-shared_params=gsub('\\.\\.','\\.',shared_params)
-shared_params=substr(shared_params,1,50)
+
 
 #######################################
 #######################################
@@ -240,17 +236,40 @@ shared_params=substr(shared_params,1,50)
 #######################################
 ggdata=data.frame(parameters=shared_params)
 
+#tidy up names for plotting and consistency from sources
+clean_names=function(x){
+  x=gsub('BTM\\.','BTM:',x)
+  x=gsub('combine\\.\\.','combine(',x)
+  x=gsub('combine\\(','comb(',x)
+  x=gsub('\\.\\.','\\.',x)
+  x=gsub('\\.\\.','\\.',x)
+  x=substr(x,1,50)
+  x[x=="IFN_y"|x=="IFN.y"]="IFN_gamma"
+  return(x)
+}
 
-ggdata$parameters%in%names(top150_6)
-ggdata$parameters
-names(top150_6)
+ggdata$parameters=clean_names(ggdata$parameters)
+
+#test if all parameters are present in all top150 lists
+if(sum(ggdata$parameters%in%clean_names(names(top150_6)))!=length(ggdata$parameters)&
+   sum(ggdata$parameters%in%clean_names(names(top150_4)))!=length(ggdata$parameters)&
+   sum(ggdata$parameters%in%clean_names(names(top150_clin)))!=length(ggdata$parameters)){
+  stop('not all overlapping parameters matching in all 3, line 253')
+}
 
 
+ggdata$six_states=top150_6[match(ggdata$parameters,
+  clean_names(names(top150_6)))]
+ggdata$four_states=top150_4[match(ggdata$parameters,
+  clean_names(names(top150_4)))]
+ggdata$clinical=top150_clin[match(ggdata$parameters,
+  clean_names(names(top150_clin)))]
 
-ggdata$six_states=top150_6[match(ggdata$parameters,substr(names(top150_6),1,50))]
-ggdata$four_states=top150_4[match(ggdata$parameters,substr(names(top150_4),1,50))]
-ggdata$clinical=top150_clin[match(ggdata$parameters,substr(names(top150_clin),1,50))]
-ggdata$parameters[7]
+grep("RIG",clean_names(names(top150_clin)),value=T)
+grep("RIG",ggdata$parameters,value=T)
+
+knitr::kable(ggdata)
+
 #test presence of one BTM:
 match("BTM:combine(TBA.M137.TBA.M180..",substr(names(top150_clin),1,50))
 grep('TBA.M137',substr(names(top150_clin),1,50),value=T)
@@ -269,33 +288,20 @@ for(i in 1:nrow(ggdata)){
 }
 new$parameters=factor(new$parameters,levels=new$parameters[order(ggdata$sum,decreasing = T)])
 
-png(paste0(outdir,'/importance_fully_shared_params_using',N_clinical,
-          '_clinical_params.png'),width=500,height=350)
-ggplot(new,aes(y=importance,fill=variable,x=parameters))+
+
+p=ggplot(new,aes(y=importance,fill=variable,x=parameters))+
   geom_bar(stat='identity')+theme_bw()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=10.5))+
   ylab('gini importance')+
   ggtitle(paste('importance of',length(unique(new$parameters)),'parameters shared across all three'))
-dev.off()
 
-
-pdf(paste0(outdir,'/importance_fully_shared_params_using',N_clinical,
-          '_clinical_params.pdf'),width=7.00,height=6.00)
-ggplot(new,aes(y=importance,fill=variable,x=parameters))+
-  geom_bar(stat='identity')+theme_bw()+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=10.5))+
-  ylab('gini importance')+
-  ggtitle(paste('importance of',length(unique(new$parameters)),'parameters shared across all three'))
-dev.off()
+ggsave(p,filename=paste0(outdir,'/importance_fully_shared_params_using',N_clinical,
+          '_clinical_params.png'),width=7,height=6)
+ggsave(p,filename=paste0(outdir,'/importance_fully_shared_params_using',N_clinical,
+          '_clinical_params.pdf'),width=7,height=6)
 
 
 ##
-shared_once_params=gsub('BTM\\.','BTM:',shared_once_params)
-shared_once_params=gsub('combine\\.\\.','combine(',shared_once_params)
-shared_once_params=gsub('\\.\\.','\\.',shared_once_params)
-shared_once_params=gsub('\\.\\.','\\.',shared_once_params)
-shared_once_params=gsub('\\)','',shared_once_params)
-shared_once_params=substr(shared_once_params,1,50)
 
 #######################################
 #######################################
@@ -304,20 +310,24 @@ shared_once_params=substr(shared_once_params,1,50)
 ggdata=data.frame(parameters=shared_once_params)
 
 
-ggdata$parameters%in%names(top150_6)
-ggdata$parameters
-names(top150_6)
+ggdata$parameters=clean_names(ggdata$parameters)
+
+if(sum(ggdata$parameters%in%c(clean_names(names(top150_6)),clean_names(names(top150_4)),
+                               clean_names(names(top150_clin))))!=length(ggdata$parameters)){
+  stop('not all parameters matching in files, line 307')
+}
 
 
+ggdata$six_states=top150_6[match(ggdata$parameters,
+  clean_names(names(top150_6)))]
+ggdata$four_states=top150_4[match(ggdata$parameters,
+  clean_names(names(top150_4)))]
+ggdata$clinical=top150_clin[match(ggdata$parameters,
+  clean_names(names(top150_clin)))]
 
-ggdata$six_states=top150_6[match(ggdata$parameters,substr(names(top150_6),1,50))]
-ggdata$four_states=top150_4[match(ggdata$parameters,substr(names(top150_4),1,50))]
-ggdata$clinical=top150_clin[match(ggdata$parameters,substr(names(top150_clin),1,50))]
 ############
 new=melt(ggdata,id='parameters',value.name = 'importance')
 
-unique(new$parameters[is.na(new$importance)])
-dim(new)
 
 new$parameters=substr(new$parameters,1,30)
 ggdata$sum=rep(0,nrow(ggdata))
@@ -333,27 +343,19 @@ for(i in 1:nrow(ggdata)){
 
 new$parameters=factor(new$parameters,levels=substr(ggdata$parameters,1,30)[order(ggdata$sum,decreasing = T)])
 
-ggdata[order(ggdata$sum,decreasing = T),]
+#plot importance of parameters shared in any combination
 
-
-png(paste0(outdir,'/importance_any_pair_shared_params_using',N_clinical,
-          'clinical_params.png'),width=700,height=400)
-ggplot(new,aes(y=importance,fill=variable,x=parameters))+
+p2=ggplot(new,aes(y=importance,fill=variable,x=parameters))+
   geom_bar(stat='identity')+theme_bw()+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=10.5))+
   ylab('gini importance')+
   ggtitle(paste('importance of',length(unique(new$parameters)),'parameters shared in any combination'))
-dev.off()
 
-pdf(paste0(outdir,'/importance_any_pair_shared_params_using',N_clinical,
+ggsave(p2,filename=paste0(outdir,'/importance_any_pair_shared_params_using',N_clinical,
+          'clinical_params.png'),width=10.00,height=7.00)
+ggsave(p2,filename=paste0(outdir,'/importance_any_pair_shared_params_using',N_clinical,
           'clinical_params.pdf'),width=10.00,height=7.00)
 
-ggplot(new,aes(y=importance,fill=variable,x=parameters))+
-  geom_bar(stat='identity')+theme_bw()+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=10.5))+
-  ylab('gini importance')+
-  ggtitle(paste('importance of',length(unique(new$parameters)),'parameters shared in any combination'))
-dev.off()
 
 # 
 # 
