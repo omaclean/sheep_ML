@@ -251,16 +251,22 @@ ggdata$six_states=top150_6[match(ggdata$parameters,substr(names(top150_6),1,50))
 ggdata$four_states=top150_4[match(ggdata$parameters,substr(names(top150_4),1,50))]
 ggdata$clinical=top150_clin[match(ggdata$parameters,substr(names(top150_clin),1,50))]
 ggdata$parameters[7]
+#test presence of one BTM:
 match("BTM:combine(TBA.M137.TBA.M180..",substr(names(top150_clin),1,50))
 grep('TBA.M137',substr(names(top150_clin),1,50),value=T)
 ############
 new=melt(ggdata,id='parameters',value.name = 'importance')
-grep('enriched',names(top150_4),value=T)
-unique(new$parameters[is.na(new$importance)])
-dim(new)
+
 
 new$parameters=substr(new$parameters,1,30)
-ggdata$sum=ggdata$clinical+ggdata$four_states+ggdata$six_states
+#get summed importance, allowing for missing values from certain runs
+ggdata$sum=rep(0,nrow(ggdata))
+for(i in 1:nrow(ggdata)){
+  if(!is.na(ggdata$clinical[i])){ggdata$sum[i]=ggdata$sum[i]+ggdata$clinical[i]}
+  if(!is.na(ggdata$six_states[i])){ggdata$sum[i]=ggdata$sum[i]+ggdata$six_states[i]}
+  if(!is.na(ggdata$four_states[i])){ggdata$sum[i]=ggdata$sum[i]+ggdata$four_states[i]}
+  
+}
 new$parameters=factor(new$parameters,levels=new$parameters[order(ggdata$sum,decreasing = T)])
 
 png(paste0(outdir,'/importance_fully_shared_params_using',N_clinical,
