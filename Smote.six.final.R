@@ -267,7 +267,8 @@ RUN_FILTRATION_AND_PREDICTION_imbalanced=function(comb_dat_funct_in,types_funct_
   
   rfcont=rfeControl(functions=rfFuncs,repeats=5,verbose=F,rerank=F,method="repeatedcv",number=5)
   RFE=rfe(x=comb_dat_funct[,hits], y=as.factor(types_funct2),rfeControl=rfcont,sizes=c(1:10,seq(12,xvar2,2)))
-  
+
+  write.csv(RFE$results,file=paste0(outdir,'/RFEtable_results_six_states',out_file_extra,xvar2,'.csv'))
   plot_funct=function(){
      par(mfrow=c(1,2),mar=c(5,4,1,1))
     plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0,1),xlab='parameters',ylab='prediction accurracy',
