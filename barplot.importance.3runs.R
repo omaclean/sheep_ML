@@ -32,11 +32,15 @@ outdir=gsub("/$","",outdir)
 shared_params=intersect(intersect(names(clin)[2:ncol(clin)],names(six)[2:ncol(six)]),
                         names(four)[2:ncol(four)])
 
+write.csv(shared_params,paste0(outdir,'/shared_three_times_params.csv'))
+
 #find params shared in any combo of three models
 shared_once_params=unique(c(intersect(names(clin)[2:ncol(clin)],names(six)[2:ncol(six)]),
                             intersect(names(six)[2:ncol(six)],names(four)[2:ncol(four)]),
                             intersect(names(clin)[2:ncol(clin)],names(four)[2:ncol(four)])
 ))
+
+write.csv(shared_once_params,paste0(outdir,'/shared_at_least_once_params.csv'))
 
 param_sets=list(clinical=names(clin)[2:ncol(clin)],six_states=names(six)[2:ncol(six)],
                 four_states=names(four)[2:ncol(four)])

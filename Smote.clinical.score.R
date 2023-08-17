@@ -95,14 +95,15 @@ library(randomForest)
 library(caret)
 colnames(mat3)=paste('BTM:',colnames(mat3),sep='')
 
+
+#drop highly correlated
+#pca_dat=pca_dat[,!colnames(pca_dat) %in% c('MIP.1.alpha','IL.1alpha','GOT.AST.')]
+
 comb_dat=as.data.frame(cbind(pca_dat,mat3))
 comb_dat=comb_dat[,!grepl('rectal|Albumin',colnames(comb_dat))]
 comb_dat=comb_dat[!grepl('SMI6-131|SMI6-132|SMI6-133',rownames(comb_dat)),]
 
 
-
-#drop highly correlated
-pca_dat=pca_dat[,sapply(colnames(pca_dat),function(x)!any(c('MIP.1.alpha','IL.1alpha','GOT.AST.')==x))]
 
 library(smotefamily)
 library(randomForest)
