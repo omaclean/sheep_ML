@@ -84,7 +84,7 @@ d <- estimateDisp(d, design, robust = T)
 d_all <- glmQLFit(d, design)
 
 
-plot_dat <- matrix(nrow = 0, ncol = 5)
+plot_dat_in <- matrix(nrow = 0, ncol = 5)
 inf_states <- grep("Mock", unique(conditions), invert = T, value = T)
 inf <- inf_states[1]
 for (inf in inf_states) {
@@ -111,13 +111,13 @@ for (inf in inf_states) {
     length(which(TT$table$logFC > 2 & rownames(TT$table) %in% ISG_list_ov$Gene.ID))
   ))
   TT <- TT[rownames(TT$table) %in% ISG_list_ov$Gene.ID, ]
-  plot_dat <- rbind(plot_dat, as.matrix(
+  plot_dat_in <- rbind(plot_dat_in, as.matrix(
     cbind(
       TT$table$logFC, TT$table$FDR < 0.05,
       rep(paste(inf, ".", sep = ""), nrow(TT)),
       rep(
-        paste(inf, ".", "\n(# sig&logFC>2=",
-          length(which(TT$table$FDR < 0.05 & abs(TT$table$logFC) > 2)), ")",
+        paste(inf, ".", "\nsig&logFC>2 = ",
+          length(which(TT$table$FDR < 0.05 & abs(TT$table$logFC) > 2)), "",
           sep = ""
         ),
         nrow(TT)
@@ -126,11 +126,12 @@ for (inf in inf_states) {
     )
   ))
 }
+colnames(plot_dat_in) <- c("logFC", "significant", "condition", "condition_lab", "gene")
 
 
+plots=list()
 plot_i <- 0
-colnames(plot_dat) <- c("logFC", "significant", "condition", "condition_lab", "gene")
-plot_dat_save <- as.data.frame(plot_dat)
+plot_dat_save <- as.data.frame(plot_dat_in)
 for (time in c("6h", "12h")) {
   plot_i <- plot_i + 1
   plot_dat <- plot_dat_save[grepl(time, plot_dat_save$condition), ]
@@ -144,12 +145,20 @@ for (time in c("6h", "12h")) {
   plot_dat <- plot_dat[order(plot_dat$colour), ]
   plots[[plot_i]] <- ggplot(plot_dat, aes(x = condition_lab, y = logFC, color = colour)) +
     geom_hline(yintercept = c(-2, 2)) +
-    geom_jitter() +
+    geom_jitter(size=1.7) +
     scale_colour_manual(values = colpal[sort(unique(as.numeric(plot_dat$colour)))]) +
     theme_bw() +
+    theme(axis.text.x=element_text(size=22),axis.text.y=element_text(size=20),
+       plot.title=element_text(size=24),
+       axis.title.x=element_text(size=1),
+       axis.title.y=element_text(size=22),
+       legend.text=element_text(size=17))+
     ylim(-3, 8) +
-    xlab("virus:location") +
-    ggtitle(paste("ISG expression ", time))
+    xlab("") +
+    ggtitle(paste("ISG expression", time))+
+    #drop legend
+    guides(color=FALSE)
+
   plot_dat_sig <- plot_dat[plot_dat$significant == T, ]
   conds <- unique(plot_dat$condition)
   genes <- unique(plot_dat_sig$gene)
@@ -172,9 +181,9 @@ for (time in c("6h", "12h")) {
   }), sep = "")
   venns[[time]] <- venn((as.data.frame((pres_abs),
     row.names = NULL,
-    col.names = NULL
-  )), zcolor = "style", ggplot = T) +
-    geom_text(aes(size = 100, x = 500, y = 1020, label = paste("DE ISGs on dpi", (time))))
+    col.names = NULL,
+  )), zcolor = "style", ggplot = T,ilcs = 1.7, sncs = 1.5) +
+    geom_text(size=8,aes(size = 1000, x = 500, y = 1020, label = paste("DE ISGs on dpi", (time))))
   print(venns[[time]])
 
   pres_abs2 <- as.data.frame(pres_abs[order(rowSums(pres_abs), decreasing = T), ])
@@ -186,7 +195,21 @@ for (time in c("6h", "12h")) {
 }
 
 
+
+png(paste(outdir,"/combat_batch.all.tab",
+    ".venns.png",
+    sep = ""), width=850,height=1050)
+  grid.arrange(venns[["6h"]], venns[["12h"]], ncol = 1)
+dev.off()
+
 grid.arrange(plots[[1]], plots[[2]], ncol = 1)
+
+
+png(paste(outdir,"/combat_batch.all.tab",
+    ".dotplot.png",
+    sep = ""), width=750,height=1000)
+  grid.arrange(plots[[1]], plots[[2]], ncol = 1)
+dev.off()
 ###############################################
 ###############################################
 ###############################################
