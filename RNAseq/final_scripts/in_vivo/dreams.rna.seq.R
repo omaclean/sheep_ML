@@ -6,8 +6,8 @@ install.packages('BiocManager')
 BiocManager::install(version = '3.17')
 BiocManager::install('variancePartition')
 
-counts=read.table('/home/oscar/Documents/sheep_megadata/RNA_Seq_1.12.20/All_Count.txt',header=T)
-outdir="/home/oscar/scripts/github/sheep_ML/outdir/RNA_seq/DEGs_dreams_controls_infect_dpi0_other"
+counts=read.table('/home/oscar/scripts/github/sheep_ML/input_data/in_vivo_RNA_seq/All_Count.txt',header=T)
+outdir="/home/oscar/scripts/github/sheep_ML/outdir/RNA_seq/DEGs_dreams_controls_infect_dpi0_other/test"
 dpi=7
 
 types_list=c("control","2013","2006","BTV8")
