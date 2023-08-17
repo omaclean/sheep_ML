@@ -119,6 +119,7 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
   }
 
   RF_1=randomForest(x=comb_dat_funct, y=as.factor(types_funct2),importance=T,do.trace = F,ntree=5000)
+  write.csv(RF_1$importance[order(RF_1$importance[,'MeanDecreaseGini'],decreasing=T),],paste0(outdir,"/init.RF.importance.clin.csv"))
   hits=rownames(RF_1$importance)[order(RF_1$importance[,'MeanDecreaseGini'],decreasing = T)][1:xvar2]
   
   rfcont=rfeControl(functions=rfFuncs,repeats=5,verbose=F,rerank=F,method="repeatedcv",number=5)
