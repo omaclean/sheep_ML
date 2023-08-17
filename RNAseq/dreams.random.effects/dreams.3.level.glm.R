@@ -33,7 +33,7 @@ for(lev2 in c('1','3','7')){
       types_list=types_list1
       types_headers=c(types_headers1)
       
-      counts2=counts[,2:ncol(counts)]
+      counts2=counts[,2:ncol(counts)]-
       rownames(counts2)=counts[,1]
       counts2=counts2[,grepl(paste(types_headers,collapse='|',sep=''),colnames(counts2))]
       counts2=counts2[rowSums(counts2>0)>7,]

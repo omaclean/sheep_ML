@@ -2,6 +2,10 @@ library('variancePartition')
 library('BiocParallel')
 library('edgeR')
 
+install.packages('BiocManager')
+BiocManager::install(version = '3.17')
+BiocManager::install('variancePartition')
+
 counts=read.table('/home/oscar/Documents/sheep_megadata/RNA_Seq_1.12.20/All_Count.txt',header=T)
 outdir="/home/oscar/scripts/github/sheep_ML/outdir/RNA_seq/DEGs_dreams_controls_infect_dpi0_other"
 dpi=7
@@ -27,7 +31,7 @@ for(dpi in c('1','3','7')){
       strsplit(x,'\\.|_')[[1]][4]))
     inf_status=rep(0,ncol(counts2))
       
-    inf_status[dpis>0&grepl(types_headers[2],colnames(counts2))]=1
+    inf_status[dpis>0 & grepl(types_headers[2],colnames(counts2))] = 1
    
     
     
@@ -42,6 +46,7 @@ for(dpi in c('1','3','7')){
     
     # estimate weights using linear mixed model of dream
     vobjDream = voomWithDreamWeights( geneExpr, form, meta_data )
+    
     fitmm = dream( vobjDream, form, meta_data )
     hits=topTable(fitmm,coef='inf_status',number=nrow(counts2))
     print(hits[1,])
