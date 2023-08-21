@@ -128,10 +128,13 @@ for (inf in inf_states) {
 }
 colnames(plot_dat_in) <- c("logFC", "significant", "condition", "condition_lab", "gene")
 
+unique(plot_dat_in[])
+
 
 plots=list()
 plot_i <- 0
 plot_dat_save <- as.data.frame(plot_dat_in)
+
 for (time in c("6h", "12h")) {
   plot_i <- plot_i + 1
   plot_dat <- plot_dat_save[grepl(time, plot_dat_save$condition), ]
@@ -140,7 +143,12 @@ for (time in c("6h", "12h")) {
   plot_dat$colour <- factor(plot_dat$colour, levels = c("nonsig", unique(plot_dat$condition)))
   colpal <- c(scales::alpha("#AAAAAA", .2), scales::alpha(RColorBrewer::brewer.pal(length(unique(plot_dat$condition)), "Dark2"), .5))
   plot_dat$condition <- factor(plot_dat$condition, levels = unique(plot_dat$condition))
-  plot_dat$condition_lab <- factor(plot_dat$condition_lab, levels = unique(plot_dat$condition_lab))
+
+  order=c(grep("BTV.8-2017",unique(plot_dat$condition_lab),value=T),
+      grep("BTV.1-2013",unique(plot_dat$condition_lab),value=T),
+      grep("BTV.1-2006",unique(plot_dat$condition_lab),value=T))
+
+  plot_dat$condition_lab <- factor(plot_dat$condition_lab, levels = order)
   plot_dat$logFC <- as.numeric(plot_dat$logFC)
   plot_dat <- plot_dat[order(plot_dat$colour), ]
   plots[[plot_i]] <- ggplot(plot_dat, aes(x = condition_lab, y = logFC, color = colour)) +
