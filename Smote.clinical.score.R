@@ -244,6 +244,9 @@ RUN_FILTRATION_AND_PREDICTION_clin_imbalanced=function(comb_dat_funct_in,types_f
   for(test in 1:runs_of_RF){
     comb_dat_funct=comb_dat_funct_in
     comb_dat_funct=comb_dat_funct[,names(hits_final_funct)]
+    if(shuffle==TRUE){
+      comb_dat_funct=comb_dat_funct[sample(1:nrow(comb_dat_funct),replace = FALSE),]
+    }
     
     types_funct2=types_funct_in
     
@@ -333,6 +336,9 @@ confusion_out=funct_outclinclass[[2]]
 confusion_out=confusion_out[,groups_hierarchy]
 confusion_out=confusion_out[groups_hierarchy,]
 write.csv(confusion_out,file=paste0(outdir,'/clinical_RF_performance_table_',out_file_extra,classes_N,'params.csv'))
+
+sum(confusion_out[1,1],confusion_out[2,2],confusion_out[3,3],confusion_out[4,4])/sum(confusion_out)
+confusion_out=read.csv("/home/oscar/scripts/github/sheep_ML/outdir/clinical_RF_performance_table_100params.csv",row.names=1)
 
 knitr::kable(confusion_out)
 #return(list(table(param_hits),confusion,xvar,RF_1$importance[,ncol(RF_1$importance)],RFE$results$Kappa,scores))

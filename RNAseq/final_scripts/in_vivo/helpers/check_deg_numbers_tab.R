@@ -3,7 +3,7 @@
 dir="/home/oscar/Documents/sheep_megadata/RNA_Seq_1.12.20/mixed_effects/controls_infect_dpi0_other/"
 
 files=list.files(dir,pattern=".csv")
-outdir="/home/oscar/scripts/github/sheep_ML/RNAseq/outputs"
+outdir="/home/oscar/scripts/github/sheep_ML/outdir/RNA_seq/DEGs_dreams_controls_infect_dpi0_other"
 
 
 #################

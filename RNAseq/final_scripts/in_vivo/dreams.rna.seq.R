@@ -2,9 +2,9 @@ library('variancePartition')
 library('BiocParallel')
 library('edgeR')
 
-install.packages('BiocManager')
-BiocManager::install(version = '3.17')
-BiocManager::install('variancePartition')
+# install.packages('BiocManager')
+# BiocManager::install(version = '3.17')
+# BiocManager::install('variancePartition')
 
 counts=read.table('/home/oscar/scripts/github/sheep_ML/input_data/in_vivo_RNA_seq/All_Count.txt',header=T)
 outdir="/home/oscar/scripts/github/sheep_ML/outdir/RNA_seq/DEGs_dreams_controls_infect_dpi0_other/test"
@@ -40,6 +40,7 @@ for(dpi in c('1','3','7')){
     geneExpr = calcNormFactors( geneExpr )
     
     meta_data=data.frame(inf_status,animal_names,dpis)
+
     rownames(meta_data)=colnames(counts2)
     form <- ~ inf_status + (1|animal_names) 
     
