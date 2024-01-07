@@ -11,7 +11,7 @@ library(RColorBrewer)
 library(Amelia)
 library(reshape2)
 library(psych)
-
+library(pheatmap)
 
 outdir="/home/oscar/scripts/github/sheep_ML/outdir/barplots"
 
@@ -25,6 +25,22 @@ four=read.csv(paste0(indir,"/final_four.data.",N_fourstates,'params.csv'))
 six=read.csv(paste0(indir,"/final_six_states.data",N_sixstates,'params.csv'))
 
 
+
+
+#functions
+
+
+#tidy up names for plotting and consistency from sources
+clean_names=function(x){
+  x=gsub('BTM\\.','BTM:',x)
+  x=gsub('combine\\.\\.','combine(',x)
+  #x=gsub('combine\\(','comb(',x)
+  x=gsub('\\.\\.','\\.',x)
+  x=gsub('\\.\\.','\\.',x)
+  x=substr(x,1,50)
+  x[x=="IFN_y"|x=="IFN.y"]="IFN_y"
+  return(x)
+}
 
 #################code
 outdir=gsub("/$","",outdir)
@@ -177,6 +193,65 @@ colnames(mat3)=paste('BTM:',colnames(mat3),sep='')
 #drop highly correlated
 #pca_dat=pca_dat[,sapply(colnames(pca_dat),function(x)!any(c('Conteggio.Globuli.Rossi..RBC.','GOT.AST.')==x))]#'TNF.alpha'
 
+
+
+### make heatmaps
+
+
+mat4=mat3
+rownames(data)=paste(data$ID,data$dpi,sep='_')
+data2=data[rownames(data)%in%rownames(mat4),]
+mat4=mat4[match(rownames(data2),rownames(mat4)),]
+
+comb_dat_heat=as.data.frame(cbind(data2,mat4))
+print(dim(comb_dat_heat))
+
+
+colnames(comb_dat_heat)=gsub("[[:blank:]]", "", colnames(comb_dat_heat))
+colnames(comb_dat_heat)=gsub('\\.\\.','\\.',colnames(comb_dat_heat))
+colnames(comb_dat_heat)=gsub('\\.\\.','\\.',colnames(comb_dat_heat))
+colnames(comb_dat_heat)=gsub('\\)','',colnames(comb_dat_heat))
+sum(substr(shared_params,1,50)%in%colnames(comb_dat_heat))
+
+range(nchar(colnames(comb_dat_heat)))
+range(nchar(shared_params))
+pheatdata=comb_dat_heat[,match(clean_names(shared_once_params),clean_names(colnames(comb_dat_heat)))]
+
+#convert to Z-scores
+pheatdata=apply(pheatdata,2,function(x)(x-mean(x,na.rm=T))/sd(x,na.rm=T))
+
+tail(colnames(comb_dat_heat))
+png(paste0(outdir,'/heatmap_shared_once_params_using',N_clinical,
+          'clinical_params.png'),width=700,height=700)
+colnames(pheatdata)=gsub('BTM\\.\\.','BTM:',colnames(pheatdata))
+colnames(pheatdata)=gsub('\\.\\.','\\.',colnames(pheatdata))
+colnames(pheatdata)=substr(colnames(pheatdata),1,30)
+
+pheatmap(pheatdata,cluster_cols=FALSE,cluster_rows=FALSE,NA_col='black')
+dev.off()
+
+rm(pheatdata)
+png(paste0(outdir,'/heatmap_shared_three_times_using',N_clinical,
+          'clinical_params.png'),width=700,height=700)
+pheatdata=comb_dat_heat[,match(clean_names(shared_params),clean_names(colnames(comb_dat_heat)))]
+
+pheatdata=apply(pheatdata,2,function(x)(x-mean(x,na.rm=T))/sd(x,na.rm=T))
+
+colnames(pheatdata)=gsub('BTM\\.\\.','BTM:',colnames(pheatdata))
+colnames(pheatdata)=gsub('\\.\\.','\\.',colnames(pheatdata))
+colnames(pheatdata)=substr(colnames(pheatdata),1,30)
+dim(pheatdata)
+pheatmap(pheatdata,cluster_cols=FALSE,cluster_rows=FALSE,NA_col='black')
+dev.off()
+
+
+
+
+
+
+###processing for plotting:
+
+
 comb_dat=as.data.frame(cbind(pca_dat,mat3))
 comb_dat=comb_dat[,!grepl('rectal|Albumin',colnames(comb_dat))]
 comb_dat=comb_dat[!grepl('SMI6-131|SMI6-132|SMI6-133',rownames(comb_dat)),]
@@ -245,17 +320,6 @@ top150_clin=gettop150(comb_dat,types_convert,clinicals_discrete)
 #######################################
 ggdata=data.frame(parameters=shared_params)
 
-#tidy up names for plotting and consistency from sources
-clean_names=function(x){
-  x=gsub('BTM\\.','BTM:',x)
-  x=gsub('combine\\.\\.','combine(',x)
-  #x=gsub('combine\\(','comb(',x)
-  x=gsub('\\.\\.','\\.',x)
-  x=gsub('\\.\\.','\\.',x)
-  x=substr(x,1,50)
-  x[x=="IFN_y"|x=="IFN.y"]="IFN_y"
-  return(x)
-}
 
 ggdata$parameters=clean_names(ggdata$parameters)
 
