@@ -392,7 +392,7 @@ for( run_nature in c("shared_once","fully_shared")){
   colnames(comb_dat_heat)=clean_names(colnames(comb_dat_heat))
   
   comb_dat_heat=comb_dat_heat[,param_order_for_plot[param_order_for_plot%in%clean_names(shared_param_set)]]
-  comb_dat_heat=apply(comb_dat_heat[],2,function(x) (log(x+1) - mean(log(x[grepl('SMC|SLC',rownames(comb_dat_heat))]+1)))/sd(log(x[!is.na(x)]+1)))
+  comb_dat_heat=apply(comb_dat_heat,2,function(x) (log10(x+1) - mean(log10(x[grepl('SMC|SLC',rownames(comb_dat_heat))]+1)))/sd(log10(x[!is.na(x)]+1)))
 
   pheaty=comb_dat_heat
 
