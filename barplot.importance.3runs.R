@@ -197,26 +197,6 @@ colnames(mat3)=paste('BTM:',colnames(mat3),sep='')
 
 ### make heatmaps
 
-
-mat4=mat3
-rownames(data)=paste(data$ID,data$dpi,sep='_')
-data2=data[rownames(data)%in%rownames(mat4),]
-mat4=mat4[match(rownames(data2),rownames(mat4)),]
-
-comb_dat_heat=as.data.frame(cbind(data2,mat4))
-print(dim(comb_dat_heat))
-
-
-colnames(comb_dat_heat)=gsub("[[:blank:]]", "", colnames(comb_dat_heat))
-colnames(comb_dat_heat)=gsub('\\.\\.','\\.',colnames(comb_dat_heat))
-colnames(comb_dat_heat)=gsub('\\.\\.','\\.',colnames(comb_dat_heat))
-colnames(comb_dat_heat)=gsub('\\)','',colnames(comb_dat_heat))
-sum(substr(shared_params,1,50)%in%colnames(comb_dat_heat))
-
-range(nchar(colnames(comb_dat_heat)))
-range(nchar(shared_params))
-pheatdata=comb_dat_heat[,match(clean_names(shared_once_params),clean_names(colnames(comb_dat_heat)))]
-
 #convert to Z-scores
 pheatdata=apply(pheatdata,2,function(x)(x-mean(x,na.rm=T))/sd(x,na.rm=T))
 
@@ -290,6 +270,8 @@ top150_4=gettop150(comb_dat,types_convert)
 ##################################################
 
 clinicals_in=read.csv('/home/oscar/Documents/sheep_megadata/clinical_score_Oscar.csv')
+clinicals_in$ID_dpi=paste(clinicals_in$ID,clinicals_in$dpi,sep='_')
+
 clinicals_in=clinicals_in[clinicals_in$dpi==dpi_plot,]
 #classes_N=30
 animals=unlist(strsplit(rownames(comb_dat),'_'))[(1:nrow(comb_dat))*2-1]
@@ -318,63 +300,157 @@ top150_clin=gettop150(comb_dat,types_convert,clinicals_discrete)
 #######################################
 #######################################
 #######################################
-ggdata=data.frame(parameters=shared_params)
+for( run_nature in c("shared_once","fully_shared")){
+  if(run_nature=="shared_once"){
+    shared_param_set=shared_params
+    ggdata=data.frame(parameters=shared_params)
+  }else{
+    shared_param_set=shared_once_params
+    ggdata=data.frame(parameters=shared_once_params)
+  }
 
 
-ggdata$parameters=clean_names(ggdata$parameters)
-
-#test if all parameters are present in all top150 lists
-if(sum(ggdata$parameters%in%clean_names(names(top150_6)))!=length(ggdata$parameters)&
-   sum(ggdata$parameters%in%clean_names(names(top150_4)))!=length(ggdata$parameters)&
-   sum(ggdata$parameters%in%clean_names(names(top150_clin)))!=length(ggdata$parameters)){
-  stop('not all overlapping parameters matching in all 3, line 253')
-}
 
 
-ggdata$six_states=top150_6[match(ggdata$parameters,
-  clean_names(names(top150_6)))]
-ggdata$four_states=top150_4[match(ggdata$parameters,
-  clean_names(names(top150_4)))]
-ggdata$clinical=top150_clin[match(ggdata$parameters,
-  clean_names(names(top150_clin)))]
-
-grep("RIG",clean_names(names(top150_clin)),value=T)
-grep("RIG",ggdata$parameters,value=T)
-
-knitr::kable(ggdata)
-
-#test presence of one BTM:
-match("BTM:combine(TBA.M137.TBA.M180..",substr(names(top150_clin),1,50))
-grep('TBA.M137',substr(names(top150_clin),1,50),value=T)
-############
-new=melt(ggdata,id='parameters',value.name = 'importance')
 
 
-new$parameters=substr(new$parameters,1,30)
-#get summed importance, allowing for missing values from certain runs
-ggdata$sum=rep(0,nrow(ggdata))
-for(i in 1:nrow(ggdata)){
-  if(!is.na(ggdata$clinical[i])){ggdata$sum[i]=ggdata$sum[i]+ggdata$clinical[i]}
-  if(!is.na(ggdata$six_states[i])){ggdata$sum[i]=ggdata$sum[i]+ggdata$six_states[i]}
-  if(!is.na(ggdata$four_states[i])){ggdata$sum[i]=ggdata$sum[i]+ggdata$four_states[i]}
+  ggdata$parameters=clean_names(ggdata$parameters)
+
+  #test if all parameters are present in all top150 lists
+  if(sum(ggdata$parameters%in%clean_names(names(top150_6)))!=length(ggdata$parameters)&
+    sum(ggdata$parameters%in%clean_names(names(top150_4)))!=length(ggdata$parameters)&
+    sum(ggdata$parameters%in%clean_names(names(top150_clin)))!=length(ggdata$parameters)){
+    stop('not all overlapping parameters matching in all 3, line 253')
+  }
+
+
+  ggdata$six_states=top150_6[match(ggdata$parameters,
+    clean_names(names(top150_6)))]
+  ggdata$four_states=top150_4[match(ggdata$parameters,
+    clean_names(names(top150_4)))]
+  ggdata$clinical=top150_clin[match(ggdata$parameters,
+    clean_names(names(top150_clin)))]
+
+  grep("RIG",clean_names(names(top150_clin)),value=T)
+  grep("RIG",ggdata$parameters,value=T)
+
+  knitr::kable(ggdata)
+
+  #test presence of one BTM:
+  match("BTM:combine(TBA.M137.TBA.M180..",substr(names(top150_clin),1,50))
+  grep('TBA.M137',substr(names(top150_clin),1,50),value=T)
+  ############
+  new=melt(ggdata,id='parameters',value.name = 'importance')
+
+
+  new$parameters=substr(new$parameters,1,30)
+  #get summed importance, allowing for missing values from certain runs
+  ggdata$sum=rep(0,nrow(ggdata))
+  for(i in 1:nrow(ggdata)){
+    if(!is.na(ggdata$clinical[i])){ggdata$sum[i]=ggdata$sum[i]+ggdata$clinical[i]}
+    if(!is.na(ggdata$six_states[i])){ggdata$sum[i]=ggdata$sum[i]+ggdata$six_states[i]}
+    if(!is.na(ggdata$four_states[i])){ggdata$sum[i]=ggdata$sum[i]+ggdata$four_states[i]}
+    
+  }
+  new$parameters=factor(new$parameters,levels=new$parameters[order(ggdata$sum,decreasing = T)])
+
+
+  p=ggplot(new,aes(y=importance,fill=variable,x=parameters))+
+    geom_bar(stat='identity')+theme_bw()+
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=10.5))+
+    ylab('gini importance')+
+    ggtitle(paste('importance of',length(unique(new$parameters)),'parameters shared across all three'))
+
+  ggsave(p,filename=paste0(outdir,'/importance_',run_nature,'params_using',N_clinical,
+            '_clinical_params.png'),width=7,height=6)
+  ggsave(p,filename=paste0(outdir,'/importance_',run_nature,'_params_using',N_clinical,
+            '_clinical_params.pdf'),width=7,height=6)
+
+
+  ## MAKE ordered heatmap
+
+  param_order_for_plot=ggdata$parameters[order(ggdata$sum,decreasing = T)]
+
+
+
+  mat4=mat3
+  rownames(data)=paste(data$ID,data$dpi,sep='_')
+  data2=data[rownames(data)%in%rownames(mat4),]
+  mat4=mat4[match(rownames(data2),rownames(mat4)),]
+
+  comb_dat_heat=as.data.frame(cbind(data2,mat4))
+  print(dim(comb_dat_heat))
+
+  #tidy up names
+  colnames(comb_dat_heat)=gsub("[[:blank:]]", "", colnames(comb_dat_heat))
+  colnames(comb_dat_heat)=gsub('\\.\\.','\\.',colnames(comb_dat_heat))
+  colnames(comb_dat_heat)=gsub('\\.\\.','\\.',colnames(comb_dat_heat))
+  colnames(comb_dat_heat)=gsub('\\)','',colnames(comb_dat_heat))
+
+
+  #clean up names for plotting
+  colnames(comb_dat_heat)=clean_names(colnames(comb_dat_heat))
+  
+  comb_dat_heat=comb_dat_heat[,param_order_for_plot[param_order_for_plot%in%clean_names(shared_param_set)]]
+  comb_dat_heat=apply(comb_dat_heat[],2,function(x) (log(x+1) - mean(log(x[grepl('SMC|SLC',rownames(comb_dat_heat))]+1)))/sd(log(x[!is.na(x)]+1)))
+
+  pheaty=comb_dat_heat
+
+
+
+
+
+  rownames(pheaty)
+  storage=rownames(pheaty)
+  colnames(pheaty)=substr(colnames(pheaty),1,32)
+  #rownames(pheaty)=paste(rownames(pheaty),clinicals_plot,sep=' #')
+  clinicals_pheaty_plot=clinicals_in$clinical.score[match(storage,clinicals_in$ID_dpi)]
+  
+  #convert plotting names to more readable format & order them by spectrum of clinical score
+  order_to_plot=c("Mock S","Mock T","BTV-8 S","BTV-8 T","BTV-1 2013 S","BTV-1 2013 T","BTV-1 2006 S","BTV-1 2006 T")
+
+  rownames(pheaty)[grep('SMC',rownames(pheaty))]='Mock S'
+  rownames(pheaty)[grep('SLC',rownames(pheaty))]='Mock T'
+  rownames(pheaty)[grep('SMI6',rownames(pheaty))]='BTV-1 2006 S'
+  rownames(pheaty)[grep('SLI6',rownames(pheaty))]='BTV-1 2006 T'
+  rownames(pheaty)[grep('SMI13',rownames(pheaty))]='BTV-1 2013 S'
+  rownames(pheaty)[grep('SLI13',rownames(pheaty))]='BTV-1 2013 T'
+  rownames(pheaty)[grep('SMI8',rownames(pheaty))]='BTV-8 S'
+  rownames(pheaty)[grep('SLI8',rownames(pheaty))]='BTV-8 T'
+  
+  store=rownames(pheaty)
+
+  rownames(pheaty)=paste(rownames(pheaty),' CS:',clinicals_pheaty_plot,sep='')
+
+  print(c(unlist(sapply(order_to_plot,function(x) which(grepl(x,store))))))
+  
+  pheaty=pheaty[c(unlist(sapply(order_to_plot,function(x) which(grepl(x,store))))),]
+
+
+  colnames(pheaty)=substr(colnames(pheaty),1,32)
+  library(grid);library(pheatmap)
+
+  pal=c(colorRampPalette(c('#1842a5',"#3A5DB1",RColorBrewer::brewer.pal(7,'RdBu')[c(4,2)],
+                          "#C4393B","#B2182B"
+  ))(60))
+
+  pal=pal[4:60]
+  plot_fun=function(){
+    pheatmap((pheaty),
+            cluster_rows=F,cluster_cols=F,treeheight_row = 0, treeheight_col = 0,
+            color= pal,na_col='#000000')
+  }
+  #print(plot_fun)
+  png(paste0(outdir,'/heatmap_ordered.',run_nature,'pheatmap.png'),width=10.00,height=10.00,units='in',res=200)
+  plot_fun()
+  dev.off()
+  pdf(paste0(outdir,'/heatmap_ordered.',run_nature,'pheatmap.pdf'),width=10.00,height=10.00)
+  plot_fun()
+  dev.off()
+
   
 }
-new$parameters=factor(new$parameters,levels=new$parameters[order(ggdata$sum,decreasing = T)])
 
-
-p=ggplot(new,aes(y=importance,fill=variable,x=parameters))+
-  geom_bar(stat='identity')+theme_bw()+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=10.5))+
-  ylab('gini importance')+
-  ggtitle(paste('importance of',length(unique(new$parameters)),'parameters shared across all three'))
-
-ggsave(p,filename=paste0(outdir,'/importance_fully_shared_params_using',N_clinical,
-          '_clinical_params.png'),width=7,height=6)
-ggsave(p,filename=paste0(outdir,'/importance_fully_shared_params_using',N_clinical,
-          '_clinical_params.pdf'),width=7,height=6)
-
-
-##
 
 #######################################
 #######################################
