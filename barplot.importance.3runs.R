@@ -397,7 +397,7 @@ for( run_nature in c("shared_once","fully_shared")){
   pheaty=comb_dat_heat
 
 
-
+  pheaty=pheaty[!rownames(pheaty)%in% c("SMI6-131_7","SMI6-132_7","SMI6-133_7"),]
 
 
   rownames(pheaty)
@@ -436,7 +436,7 @@ for( run_nature in c("shared_once","fully_shared")){
 
   pal=pal[4:60]
   plot_fun=function(){
-    pheatmap((pheaty),
+    pheatmap(t(pheaty),
             cluster_rows=F,cluster_cols=F,treeheight_row = 0, treeheight_col = 0,
             color= pal,na_col='#000000')
   }

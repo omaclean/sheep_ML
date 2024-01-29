@@ -210,6 +210,12 @@ png(paste(outdir,"/combat_batch.all.tab",
   grid.arrange(venns[["6h"]], venns[["12h"]], ncol = 1)
 dev.off()
 
+pdf(paste(outdir,"/combat_batch.all.tab",
+    ".venns.pdf",
+    sep = ""), width=8.50,height=10.50)
+  grid.arrange(venns[["6h"]], venns[["12h"]], ncol = 1)
+dev.off()
+
 grid.arrange(plots[[1]], plots[[2]], ncol = 1)
 
 
@@ -218,6 +224,14 @@ png(paste(outdir,"/combat_batch.all.tab",
     sep = ""), width=750,height=1000)
   grid.arrange(plots[[1]], plots[[2]], ncol = 1)
 dev.off()
+
+pdf(paste(outdir,"/combat_batch.all.tab",
+    ".dotplot.pdf",
+    sep = ""), width=7.50,height=10.00)
+  grid.arrange(plots[[1]], plots[[2]], ncol = 1)
+dev.off()
+
+
 ###############################################
 ###############################################
 ###############################################

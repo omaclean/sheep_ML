@@ -317,8 +317,10 @@ clinicals_discrete[!grepl('SMC|SLC',animals)]=
   unlist(convert_clinicals[as.character(clinicals[!grepl('SMC|SLC',animals)])])
 
 comb_dat_funct_in=bin1=comb_dat;types_funct_in=clinicals_discrete
+
 ############## RUN it!
 
+write.csv(bin1,file=paste0(outdir,'/all_RF_input.data_clin_as_input_toML.csv'))
 #run with defined optimal parameter numbers first
 funct_outclinclass=RUN_FILTRATION_AND_PREDICTION_clin_imbalanced(bin1,clinicals_discrete,runs_of_RF,classes_N)
 
