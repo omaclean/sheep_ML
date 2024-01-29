@@ -212,7 +212,7 @@ dev.off()
 
 pdf(paste(outdir,"/combat_batch.all.tab",
     ".venns.pdf",
-    sep = ""), width=8.50,height=10.50)
+    sep = ""), width=12,height=15.0)
   grid.arrange(venns[["6h"]], venns[["12h"]], ncol = 1)
 dev.off()
 
@@ -227,7 +227,7 @@ dev.off()
 
 pdf(paste(outdir,"/combat_batch.all.tab",
     ".dotplot.pdf",
-    sep = ""), width=7.50,height=10.00)
+    sep = ""), width=12.,height=15.00)
   grid.arrange(plots[[1]], plots[[2]], ncol = 1)
 dev.off()
 
