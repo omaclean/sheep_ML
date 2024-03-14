@@ -279,6 +279,9 @@ RUN_FILTRATION_AND_PREDICTION_imbalanced=function(comb_dat_funct_in,types_funct_
     if(xvar!=0){
       abline(v=xvar,col=wesanderson::wes_palette('Darjeeling1')[5],lty=2)
     }
+    print(knitr::kable(RFE$results))
+    print(knitr::kable(table(types_funct2)))
+    return(0)
     plot(RFE$results$Variables,RFE$results$Kappa,ylim=c(0.8,1),xlab='',ylab='',
         col=scales::alpha(wesanderson::wes_palette('Darjeeling1')[1],.6),pch=19)
     par(new=T)

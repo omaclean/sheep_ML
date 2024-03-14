@@ -197,32 +197,33 @@ colnames(mat3)=paste('BTM:',colnames(mat3),sep='')
 
 ### make heatmaps
 
-#convert to Z-scores
-pheatdata=apply(pheatdata,2,function(x)(x-mean(x,na.rm=T))/sd(x,na.rm=T))
+# #convert to Z-scores
+# pheatdata=apply(mat3,2,function(x)(x-mean(x,na.rm=T))/sd(x,na.rm=T))
+# write.csv(pheatdata,paste0(outdir,'/pheatdata_transformed_params.csv'))
 
-tail(colnames(comb_dat_heat))
-png(paste0(outdir,'/heatmap_shared_once_params_using',N_clinical,
-          'clinical_params.png'),width=700,height=700)
-colnames(pheatdata)=gsub('BTM\\.\\.','BTM:',colnames(pheatdata))
-colnames(pheatdata)=gsub('\\.\\.','\\.',colnames(pheatdata))
-colnames(pheatdata)=substr(colnames(pheatdata),1,30)
+# tail(colnames(comb_dat_heat))
+# png(paste0(outdir,'/heatmap_shared_once_params_using',N_clinical,
+#           'clinical_params.png'),width=700,height=700)
+# colnames(pheatdata)=gsub('BTM\\.\\.','BTM:',colnames(pheatdata))
+# colnames(pheatdata)=gsub('\\.\\.','\\.',colnames(pheatdata))
+# colnames(pheatdata)=substr(colnames(pheatdata),1,30)
 
-pheatmap(pheatdata,cluster_cols=FALSE,cluster_rows=FALSE,NA_col='black')
-dev.off()
+# pheatmap(pheatdata,cluster_cols=FALSE,cluster_rows=FALSE,NA_col='black')
+# dev.off()
 
-rm(pheatdata)
-png(paste0(outdir,'/heatmap_shared_three_times_using',N_clinical,
-          'clinical_params.png'),width=700,height=700)
-pheatdata=comb_dat_heat[,match(clean_names(shared_params),clean_names(colnames(comb_dat_heat)))]
+# rm(pheatdata)
+# png(paste0(outdir,'/heatmap_shared_three_times_using',N_clinical,
+#           'clinical_params.png'),width=700,height=700)
+# pheatdata=comb_dat_heat[,match(clean_names(shared_params),clean_names(colnames(comb_dat_heat)))]
 
-pheatdata=apply(pheatdata,2,function(x)(x-mean(x,na.rm=T))/sd(x,na.rm=T))
+# pheatdata=apply(pheatdata,2,function(x)(x-mean(x,na.rm=T))/sd(x,na.rm=T))
 
-colnames(pheatdata)=gsub('BTM\\.\\.','BTM:',colnames(pheatdata))
-colnames(pheatdata)=gsub('\\.\\.','\\.',colnames(pheatdata))
-colnames(pheatdata)=substr(colnames(pheatdata),1,30)
-dim(pheatdata)
-pheatmap(pheatdata,cluster_cols=FALSE,cluster_rows=FALSE,NA_col='black')
-dev.off()
+# colnames(pheatdata)=gsub('BTM\\.\\.','BTM:',colnames(pheatdata))
+# colnames(pheatdata)=gsub('\\.\\.','\\.',colnames(pheatdata))
+# colnames(pheatdata)=substr(colnames(pheatdata),1,30)
+# dim(pheatdata)
+# pheatmap(pheatdata,cluster_cols=FALSE,cluster_rows=FALSE,NA_col='black')
+# dev.off()
 
 
 
@@ -353,7 +354,8 @@ for( run_nature in c("shared_once","fully_shared")){
     
   }
   new$parameters=factor(new$parameters,levels=new$parameters[order(ggdata$sum,decreasing = T)])
-
+  write.csv(new,file=paste0(outdir,'/importance_',run_nature,'params_using',N_clinical,
+          '_clinical_params.csv'))
 
   p=ggplot(new,aes(y=importance,fill=variable,x=parameters))+
     geom_bar(stat='identity')+theme_bw()+
@@ -395,7 +397,8 @@ for( run_nature in c("shared_once","fully_shared")){
   comb_dat_heat=apply(comb_dat_heat,2,function(x) (log10(x+1) - mean(log10(x[grepl('SMC|SLC',rownames(comb_dat_heat))]+1)))/sd(log10(x[!is.na(x)]+1)))
 
   pheaty=comb_dat_heat
-
+  write.csv(pheaty,paste0(outdir,'/pheaty_ordered.',run_nature,'params_using',N_clinical,
+          '_clinical_params.csv'))
 
   pheaty=pheaty[!rownames(pheaty)%in% c("SMI6-131_7","SMI6-132_7","SMI6-133_7"),]
 
@@ -493,6 +496,7 @@ for(i in 1:nrow(ggdata)){
 new$parameters=factor(new$parameters,levels=substr(ggdata$parameters,1,30)[order(ggdata$sum,decreasing = T)])
 
 #plot importance of parameters shared in any combination
+write.csv(new,file=paste0(outdir,'/importance_allruns_params.csv'))
 
 p2=ggplot(new,aes(y=importance,fill=variable,x=parameters))+
   geom_bar(stat='identity')+theme_bw()+
