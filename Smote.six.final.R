@@ -505,10 +505,14 @@ layout(xaxis=list(title=paste('PC',axis[1],' var prop=', round(100*pca$sdev[axis
 
 bin1=comb_dat
 
+types_convert
+
 funct_out_7_cats_comb=RUN_FILTRATION_AND_PREDICTION_imbalanced(bin1,types_convert,runs_of_RF,N_classes)
 
 write.csv(funct_out_7_cats_comb[[2]],file=paste0(outdir,'/six_states_performance_table_Nparams',
         out_file_extra,N_classes,'.csv'))
+
+write.csv(bin1,paste0(outdir,'/six_states_RF_data','.csv'))
 
 plot(funct_out_7_cats_comb[[1]])
 
