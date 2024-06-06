@@ -67,7 +67,7 @@ dev.off()
 png(paste0(outdir,"/four_states_performance_table_Nparams17_ROC.png"),width=600,height=600)
 run_ROC(four_states,"Four states of infection")
 dev.off()
-pdf(paste0(outdir,"/sfour_states_performance_table_Nparams17_ROC.pdf"),width=9,height=9)
+pdf(paste0(outdir,"/four_states_performance_table_Nparams17_ROC.pdf"),width=9,height=9)
 run_ROC(four_states,"Four states of infection")
 dev.off()
 
