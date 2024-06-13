@@ -83,3 +83,6 @@ dev.off()
 pdf(paste0(outdir,"/clinical_RF_performance_table_100params.pdf"),width=9,height=9)
 run_ROC(clinical,"Clinical score states of infection")
 dev.off()
+
+
+

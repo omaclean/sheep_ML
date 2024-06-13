@@ -5,9 +5,11 @@ library(randomForest)
 library(Boruta)
 
 test_data=read.csv("/home/oscar/scripts/github/sheep_ML/outdir/six_states_RF_data.csv")
-
+test_data_reg=as.data.frame(test_data[,2:ncol(test_data)])
 classes=sapply(test_data$X,function(x) strsplit(x,"-")[[1]][1])
 
+
+#################### read in data
 
 types_convert=list()
 types_convert[['SMC']]='control_Sass'
@@ -21,9 +23,9 @@ outdir="/home/oscar/scripts/github/sheep_ML/outdir/Boruta/sixstates"
 
 types=factor(as.character(types_convert[classes]),levels=unlist(types_convert)[unlist(types_convert)%in%as.character(types_convert[classes])])
 
-test_data_reg=as.data.frame(test_data[,2:ncol(test_data)])
 
-set.seed(42);test_dat=Boruta(x=test_data_reg , y=types,doTrace=T,maxRuns=ncol(test_data_reg))
+
+set.seed(42);test_dat=Boruta(x=test_data_reg , y=types,doTrace=T,maxRuns=5000)
 # results=(attStats(test_dat))
 
 # knitr::kable(results)
@@ -62,7 +64,7 @@ types=factor(as.character(types_convert[classes]),levels=unique(unlist(types_con
 
 test_data_reg=as.data.frame(test_data[,2:ncol(test_data)])
 
-set.seed(42);test_dat=Boruta(x=test_data_reg , y=types,doTrace=T,maxRuns=ncol(test_data_reg))
+set.seed(42);test_dat=Boruta(x=test_data_reg , y=types,doTrace=T,maxRuns=5000)
 results=(attStats(test_dat))
 
 
@@ -88,14 +90,15 @@ sum(colnames(four_state_17params)%in%c(confirmed,tentative))
 outdir="/home/oscar/scripts/github/sheep_ML/outdir/Boruta/clinical"
 
 clinicals_in=read.csv('/home/oscar/Documents/sheep_megadata/clinical_score_Oscar.csv')
-clinicals_in=clinicals_in[clinicals_in$dpi==dpi_plot,]
+clinicals_in=clinicals_in[clinicals_in$dpi==7,]
 #classes_N=30
 
-animals=unlist(strsplit(rownames(comb_dat),'_'))[(1:nrow(comb_dat))*2-1]
+animals=sapply(test_data$X,function(x) strsplit(x,"_")[[1]][1])
+
 
 
 clinicals_in=clinicals_in[clinicals_in$ID%in%animals,]
-comb_dat=comb_dat[order(clinicals_in$clinical.score[match(animals,clinicals_in$ID)]),]
+
 clinicals=clinicals_in$clinical.score[match(animals,clinicals_in$ID)]
 names(clinicals)=animals # bad coding makes this necessary for function
 
@@ -110,7 +113,7 @@ clinicals_discrete[!grepl('SMC|SLC',animals)]=
   unlist(convert_clinicals[as.character(clinicals[!grepl('SMC|SLC',animals)])])
 
 clinicals_discrete=factor(clinicals_discrete,levels=c("control",(unique(convert_clinicals))))
-set.seed(42);test_dat=Boruta(x=test_data_reg , y=clinicals_discrete,doTrace=T,maxRuns=ncol(test_data_reg))
+set.seed(42);test_dat=Boruta(x=test_data_reg , y=clinicals_discrete,doTrace=T,maxRuns=5000)
 results=(attStats(test_dat))
 
 
@@ -138,8 +141,30 @@ sum(colnames(clin_30params)%in%confirmed)
 sum(colnames(clin_30params)%in%c(confirmed,tentative))
 
 
-intersect(clin_comb,intersect(six_states_comb,four_states_comb))
-intersect(clin_conf,intersect(six_states_conf,four_states_conf))
+all_comb=intersect(clin_comb,intersect(six_states_comb,four_states_comb))
+print(knitr::kable(all_comb,caption="intersect 3 models tentative+ confirmed"))
+conf_comb=intersect(clin_conf,intersect(six_states_conf,four_states_conf))
+print(knitr::kable(substr(all_comb,1,30),caption=paste(length(all_comb),"params intersect 3 models confirmed")))
 ####total overlap
 
 
+intersect_RF=intersect(colnames(four_state_17params),intersect(colnames(clin_100params),colnames(six_state_50params)))
+
+print(length(intersect_RF))
+
+print(knitr::kable(intersect_RF))
+print(knitr::kable(intersect(all_comb,intersect_RF),caption="intersect RF and Boruta tentative+conf"))
+
+print(knitr::kable(intersect(conf_comb,intersect_RF),caption="intersect RF and Boruta tentative+conf"))
+
+
+get_values=function(params,confirmed,tentative){
+  return(unlist(as.character(sapply(params,function(x) c("unimportant","tentative","confirmed")[
+      as.numeric(x %in%confirmed)+as.numeric(x %in%tentative)+1]))))
+
+}
+
+knitr::kable(data.frame(params=intersect_RF,
+  four_states=get_values(intersect_RF,four_states_conf,four_states_comb),
+  six_states=get_values(intersect_RF,six_states_conf,six_states_comb),
+  clinical=get_values(intersect_RF,clin_conf,clin_comb)))
