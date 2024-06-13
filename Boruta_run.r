@@ -34,13 +34,21 @@ set.seed(42);test_dat=Boruta(x=test_data_reg , y=types,doTrace=T,maxRuns=5000)
 confirmed=rownames(results)[results$decision=="Confirmed"]
 tentative=rownames(results)[results$decision=="Tentative"]
 
-six_states_comb=c(confirmed,tentative)
-six_states_conf=confirmed
 
 write.csv(confirmed,paste0(outdir,"/confirmed_params.csv"))
 write.csv(tentative,paste0(outdir,"/tentative_params.csv"))
 
+####
+
+outdir="/home/oscar/scripts/github/sheep_ML/outdir/Boruta/sixstates"
+confirmed=read.csv(paste0(outdir,"/confirmed_params.csv"))[,2]
+tentative=read.csv(paste0(outdir,"/tentative_params.csv"))[,2]
+
+six_states_comb=c(confirmed,tentative)
+six_states_conf=confirmed
 print(paste("length(confirmed)",length(confirmed),"length(tentative)",length(tentative)))
+
+
 six_state_50params=read.csv("/home/oscar/scripts/github/sheep_ML/outdir/final_six_states.data50params.csv")
 sum(colnames(six_state_50params)%in%confirmed)
 sum(colnames(six_state_50params)%in%c(confirmed,tentative))
@@ -79,7 +87,11 @@ print(paste("length(confirmed)",length(confirmed),"length(tentative)",length(ten
 write.csv(confirmed,paste0(outdir,"/confirmed_params.csv"))
 write.csv(tentative,paste0(outdir,"/tentative_params.csv"))
 
+outdir="/home/oscar/scripts/github/sheep_ML/outdir/Boruta/fourstates"
 four_state_17params=read.csv("/home/oscar/scripts/github/sheep_ML/outdir/final_four.data.17params.csv")
+confirmed=read.csv(paste0(outdir,"/confirmed_params.csv"))[,2]
+tentative=read.csv(paste0(outdir,"/tentative_params.csv"))[,2]
+
 sum(colnames(four_state_17params)%in%confirmed)
 sum(colnames(four_state_17params)%in%c(confirmed,tentative))
 
@@ -122,13 +134,20 @@ confirmed=rownames(results)[results$decision=="Confirmed"]
 tentative=rownames(results)[results$decision=="Tentative"]
 
 
+
+
+write.csv(confirmed,paste0(outdir,"/confirmed_params.csv"))
+write.csv(tentative,paste0(outdir,"/tentative_params.csv"))
+
+
+##
+outdir="/home/oscar/scripts/github/sheep_ML/outdir/Boruta/clinical"
+confirmed=read.csv(paste0(outdir,"/confirmed_params.csv"))[,2]
+tentative=read.csv(paste0(outdir,"/tentative_params.csv"))[,2]
 print(paste("length(confirmed)",length(confirmed),"length(tentative)",length(tentative)))
 
 clin_comb=c(confirmed,tentative)
 clin_conf=c(confirmed)
-write.csv(confirmed,paste0(outdir,"/confirmed_params.csv"))
-write.csv(tentative,paste0(outdir,"/tentative_params.csv"))
-
 
 clin_100params=read.csv("/home/oscar/scripts/github/sheep_ML/outdir/clinical_score.data_100.params.csv",row.names=1)
 sum(colnames(clin_100params)%in%confirmed)
